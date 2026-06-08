@@ -73,7 +73,7 @@ function AppContent() {
 
 export default function App() {
   return (
-    /* MARKER-MAKE-KIT-INVOKED — no kit installed; using Tailwind + lucide-react */
+   
     <AppProvider>
       <AppContent />
     </AppProvider>

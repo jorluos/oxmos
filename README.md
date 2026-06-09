@@ -26,6 +26,20 @@ Convertir este prototipo en una plataforma ecommerce completa para ropa, con fro
 - Servicios para catálogo, usuarios, pedidos, inventario y administración
 - Validación de datos en servidor
 
+### Estructura del backend
+
+Arquitectura de Software seleccionada: La idea es trabajar con un backend monolítico modular, organizado por capas.
+
+
+### Capas por módulo
+
+Cada módulo puede organizarse internamente así:
+
+- `presentation/`: controladores, rutas y validaciones de entrada.
+- `application/`: casos de uso y lógica de aplicación.
+- `domain/`: entidades, reglas de negocio e invariantes.
+- `persistence/`: repositorios, modelos ORM y acceso a base de datos.
+
 ### Base de datos
 
 - Rol
@@ -44,6 +58,63 @@ Convertir este prototipo en una plataforma ecommerce completa para ropa, con fro
 - Variables de entorno para credenciales y servicios externos
 - Registro de errores y auditoría básica
 - Despliegue separado para frontend y backend
+
+### Instalar y desplegar Laravel (guía rápida)
+
+Se mantiene el frontend en `src/` y se crea el backend en `backend/`.
+
+1) Se creó el proyecto Laravel (local)
+
+```bash
+cd d:\\MH-Software-House\\oxmos-Project
+composer create-project laravel/laravel backend
+cd backend
+php artisan serve
+```
+
+2) Configuración inicial en `backend/.env`
+- `APP_URL` → URL local o URL de producción (ej. `https://api.tudominio.com`).
+- `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` → datos de la base de datos creada en el hosting.
+- Ejecutar `php artisan key:generate`.
+
+3) Habilitar CORS para que React consuma la API: editar `backend/config/cors.php` o añadir el origen del frontend en `paths` / `allowed_origins`.
+
+4) Migraciones y seeders
+
+```bash
+php artisan migrate --seed
+```
+
+5) Build del frontend y despliegue (shared hosting)
+
+- En el equipo de desarrollo hay que compilar el frontend:
+
+```bash
+cd d:\\MH-Software-House\\oxmos-Project
+npm run build
+```
+
+- Subir el contenido de `dist/` (o `build/` según tu configuración de Vite) al `public_html` del dominio principal.
+
+6) Despliegue de Laravel en hosting compartido
+
+- Subir la carpeta `backend` al hosting (por ejemplo en `your_account/oxmos-backend/`).
+- Apuntar el subdominio `api.tudominio.com` a la carpeta `oxmos-backend/public` como document root (Panel de control → Dominios/subdominios).
+- Configurar `.env` en el hosting con las credenciales de producción.
+- Ajustar permisos: `storage/` y `bootstrap/cache` deben ser escribibles.
+- Ejecutar migraciones desde consola del hosting o mediante un script: `php artisan migrate`.
+
+7) Post-despliegue
+
+- En `backend/.env` en producción: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` correcto.
+- Configurar backups y copias de la base de datos desde el panel del hosting (Hostinger ofrece backups diarios en tu plan).
+- Forzar HTTPS y configurar el certificado (Hostinger ofrece SSL gratuito y CDN si se activa).
+
+Notas y precauciones:
+- En hosting compartido no es recomendable depender de procesos largos (workers, queues). Si se necesitan colas, considerar servicios externos (Redis/Beanstalk) o soluciones gestionadas.
+- Mantener separadas las fuentes: no mezclar la app React `src/` con la app Laravel `backend/`.
+- Para llamadas desde el frontend, usar la URL completa del API (ej. `https://api.tudominio.com/api/products`).
+
 
 ## Orden de implementación
 

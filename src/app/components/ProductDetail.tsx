@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Heart, ShoppingBag, Star, ChevronLeft, Share2, ArrowRight } from 'lucide-react';
-import { useApp } from './AppContext';
-import { formatPrice } from './data';
+import { useApp } from '../context/AppContext';
+import { formatPrice } from '../data';
 
 export function ProductDetail() {
   const { currentProductId, getProduct, navigate, addToCart, toggleWishlist, wishlist, darkMode } = useApp();

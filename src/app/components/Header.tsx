@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ShoppingBag, Heart, User, Menu, X, Search, ChevronDown, Moon, Sun } from 'lucide-react';
-import { useApp } from './AppContext';
+import { useApp } from '../context/AppContext';
 
 export function Header() {
   const { navigate, cartCount, wishlist, currentUser, logout, currentPage, darkMode, toggleDarkMode, setCartOpen } = useApp();
@@ -163,7 +163,9 @@ export function Header() {
               type="text"
               placeholder="Buscar prendas, marcas..."
               className={`flex-1 outline-none text-sm bg-transparent ${darkMode ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'}`}
-              onKeyDown={e => e.key === 'Escape' && setSearchOpen(false)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+              e.key === 'Escape' && setSearchOpen(false)
+            }
             />
             <button
               onClick={() => setSearchOpen(false)}

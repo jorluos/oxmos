@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useApp } from './AppContext';
+import { useApp } from '../context/AppContext';
 
 export function Register() {
   const { register, navigate } = useApp();
@@ -14,7 +14,7 @@ export function Register() {
 
   const update = (field: string, value: string) => {
     setForm(f => ({ ...f, [field]: value }));
-    setErrors(e => ({ ...e, [field]: '' }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
     setGlobalError('');
   };
 
@@ -55,7 +55,9 @@ export function Register() {
       <input
         type={type}
         value={form[name]}
-        onChange={e => update(name, e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          update(name, e.target.value)
+        }
         placeholder={placeholder}
         className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
           errors[name] ? 'border-red-400' : 'border-black/20 focus:border-black'
@@ -91,7 +93,10 @@ export function Register() {
               <input
                 type={showPw ? 'text' : 'password'}
                 value={form.password}
-                onChange={e => update('password', e.target.value)}
+                
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  update('password', e.target.value)
+                }
                 placeholder="Mínimo 6 caracteres"
                 className={`w-full border px-4 py-3 text-sm outline-none pr-12 ${
                   errors.password ? 'border-red-400' : 'border-black/20 focus:border-black'
@@ -113,7 +118,9 @@ export function Register() {
             <input
               type="password"
               value={form.confirmPassword}
-              onChange={e => update('confirmPassword', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                update('confirmPassword', e.target.value)
+              }
               placeholder="Repite tu contraseña"
               className={`w-full border px-4 py-3 text-sm outline-none ${
                 errors.confirmPassword ? 'border-red-400' : 'border-black/20 focus:border-black'

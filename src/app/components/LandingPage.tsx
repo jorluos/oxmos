@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
-import { useApp } from './AppContext';
-import { formatPrice } from './data';
+import { useApp } from '../context/AppContext';
+import { formatPrice } from '../data';
 
 const HERO_SLIDES = [
   {
@@ -317,7 +317,10 @@ export function LandingPage() {
           </p>
           <form
             className="flex flex-col sm:flex-row gap-2"
-            onSubmit={e => { e.preventDefault(); alert('¡Gracias por suscribirte!'); }}
+            onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
+              e.preventDefault();
+              alert('¡Gracias por suscribirte!');
+            }}
           >
             <input
               type="email"

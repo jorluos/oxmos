@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ChevronLeft, Package, CheckCircle, ArrowRight } from 'lucide-react';
-import { useApp } from './AppContext';
-import { formatPrice } from './data';
+import { useApp } from '../context/AppContext';
+import { formatPrice } from '../data';
+import type { ChangeEvent } from 'react';
+
 
 export function Checkout() {
   const { cart, cartTotal, getProduct, currentUser, addOrder, clearCart, navigate, darkMode } = useApp();
@@ -18,7 +20,9 @@ export function Checkout() {
     ciudad: '',
     notas: '',
   });
-  const [errors, setErrors] = useState<Partial<typeof form>({});
+
+  type FormErrors = Partial<Record<keyof typeof form, string>>;
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const validate = () => {
     const e: Partial<typeof form> = {};
@@ -65,7 +69,11 @@ export function Checkout() {
       <input
         type={type}
         value={form[name]}
-        onChange={e => { setForm(f => ({ ...f, [name]: e.target.value })); setErrors(er => ({ ...er, [name]: '' })); }}
+        
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          setForm(f => ({ ...f, [name]: e.target.value }));
+          setErrors(er => ({ ...er, [name]: '' }));
+        }}
         placeholder={placeholder}
         className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
           errors[name] ? 'border-red-400' : 'border-black/20 focus:border-black'
@@ -173,7 +181,9 @@ export function Checkout() {
                   <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/50' : 'text-black/50'}`}>Notas adicionales</label>
                   <textarea
                     value={form.notas}
-                    onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      setForm(f => ({ ...f, notas: e.target.value }))
+                    }
                     placeholder="Instrucciones especiales de entrega, apartamento, etc."
                     rows={3}
                     className="w-full border border-black/20 focus:border-black px-4 py-3 text-sm outline-none resize-none"

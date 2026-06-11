@@ -1,4 +1,4 @@
-import type { Product, Order, User, Gender } from './types';
+import type { Product, Order, User, Gender } from '../types';
 
 export const INITIAL_PRODUCTS: Product[] = [
   {

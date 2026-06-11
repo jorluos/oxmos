@@ -1,5 +1,5 @@
 import { Instagram, Facebook, Twitter } from 'lucide-react';
-import { useApp } from './AppContext';
+import { useApp } from '../context/AppContext';
 
 export function Footer() {
   const { navigate, darkMode } = useApp();

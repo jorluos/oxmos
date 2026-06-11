@@ -1,8 +1,8 @@
 import type { MouseEvent } from 'react';
 import { Heart, ShoppingBag } from 'lucide-react';
-import { useApp } from './AppContext';
-import type { Product } from './types';
-import { formatPrice } from './data';
+import { useApp } from '../context/AppContext';
+import type { Product } from '../types';
+import { formatPrice } from '../data';
 
 interface ProductCardProps {
   product: Product;

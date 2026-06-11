@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { SlidersHorizontal, ChevronDown, ChevronUp, X, ArrowUp } from 'lucide-react';
-import { useApp } from './AppContext';
+import { useApp } from '../context/AppContext';
 import { ProductCard } from './ProductCard';
-import { GARMENT_TYPES, LENGTHS, SIZES, GENDERS, COLOR_OPTIONS } from './data';
-import type { ProductCategory, Gender } from './types';
+import { GARMENT_TYPES, LENGTHS, SIZES, GENDERS, COLOR_OPTIONS } from '../data';
+import type { ProductCategory, Gender } from '../types';
+import type { ChangeEvent } from 'react';
 
 type SortOption = 'recomendado' | 'precio-asc' | 'precio-desc' | 'popular';
 type SectionFilter = 'TODOS' | ProductCategory;
@@ -122,7 +123,9 @@ export function Catalog() {
             <span className={`text-xs ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{filtered.length} productos</span>
             <select
               value={sort}
-              onChange={e => setSort(e.target.value as SortOption)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                  setSort(e.target.value as SortOption)
+                }
               className={`text-xs border px-2 py-1.5 outline-none cursor-pointer transition-colors ${
                 darkMode ? 'border-white/20 bg-black text-white' : 'border-black/20 bg-white text-black'
               }`}
@@ -307,7 +310,9 @@ export function Catalog() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {visible.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <div key={product.id}>
+                    <ProductCard product={product} />
+                  </div>
                 ))}
               </div>
             )}

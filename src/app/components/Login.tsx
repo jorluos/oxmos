@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useApp } from './AppContext';
+import { useApp } from '../context/AppContext';
 
 export function Login() {
   const { login, navigate } = useApp();
@@ -32,19 +32,26 @@ export function Login() {
             <input
               type="email"
               value={correo}
-              onChange={e => { setCorreo(e.target.value); setError(''); }}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setCorreo(e.target.value);
+                setError('');
+              }}
               placeholder="tu@correo.com"
               required
               className="w-full border border-black/20 focus:border-black px-4 py-3 text-sm outline-none"
             />
           </div>
+          
           <div>
             <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Contraseña</label>
             <div className="relative">
               <input
                 type={showPw ? 'text' : 'password'}
                 value={password}
-                onChange={e => { setPassword(e.target.value); setError(''); }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
                 placeholder="••••••••"
                 required
                 className="w-full border border-black/20 focus:border-black px-4 py-3 text-sm outline-none pr-12"

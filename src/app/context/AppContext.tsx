@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Product, CartItem, User, Order, Page } from './types';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from './data';
+import type { Product, CartItem, User, Order, Page } from '../types';
+import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from '../data';
 
 interface AppState {
   currentPage: Page;

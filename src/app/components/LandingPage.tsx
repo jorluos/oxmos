@@ -1,11 +1,11 @@
 import { ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { NuevoCards } from './NuevoCards';
-import { FavCards } from './FavCards';
-import { TwoColumnPromo } from './TwoColumnPromo';
-import { NewsLetter } from './NewsLetter';
-import { HeroSlides } from './HeroSlides';
-import { BigBanner } from './BigBanner';
+import { NuevoCards } from './LandingPageComponents/NuevoCards';
+import { FavCards } from './LandingPageComponents/FavCards';
+import { TwoColumnPromo } from './LandingPageComponents/TwoColumnPromo';
+import { NewsLetter } from './LandingPageComponents/NewsLetter';
+import { HeroSlides } from './LandingPageComponents/HeroSlides';
+import { BigBanner } from './LandingPageComponents/BigBanner';
 
 const HERO_SLIDES = [
   {

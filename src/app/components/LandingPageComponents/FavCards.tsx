@@ -1,5 +1,5 @@
-import { formatPrice } from '../data';
-import { useApp } from '../context/AppContext';
+import { formatPrice } from '../../data';
+import { useApp } from '../../context/AppContext';
 
 export function FavCards(){
     const { navigate, products, darkMode } = useApp();

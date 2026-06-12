@@ -1,4 +1,4 @@
-import { useApp } from '../context/AppContext';
+import { useApp } from '../../context/AppContext';
 import { ArrowRight } from 'lucide-react';
 
 export function TwoColumnPromo() {

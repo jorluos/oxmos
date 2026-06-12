@@ -1,6 +1,6 @@
 import { X, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { formatPrice } from '../data';
+import { useApp } from '../../context/AppContext';
+import { formatPrice } from '../../data';
 
 export function Cart() {
   const { cart, isCartOpen, setCartOpen, removeFromCart, updateCartQty, navigate, cartTotal, getProduct, darkMode } = useApp();

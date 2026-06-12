@@ -192,6 +192,7 @@ Este apartado servirá como bitácora del prototipo. La idea es documentar qué 
 - Pendiente: estrategia de persistencia del carrito
 - Pendiente: lineamientos finales del panel admin
 
+
 ## Requisitos
 
 - Node.js 18 o superior

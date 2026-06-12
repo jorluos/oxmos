@@ -1,4 +1,4 @@
-import { Instagram, Facebook, Twitter } from 'lucide-react';
+import { Instagram, Facebook } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export function Footer() {
@@ -12,10 +12,10 @@ export function Footer() {
           <div className="md:col-span-1">
             <h2 className="text-2xl tracking-[0.3em] font-light mb-4">OXMOS</h2>
             <p className={`text-sm leading-relaxed ${darkMode ? 'text-black/50' : 'text-white/50'}`}>
-              Moda contemporánea con identidad propia. Prendas diseñadas para quienes marcan la diferencia.
+              Prendas de calidad.
             </p>
             <div className="flex gap-3 mt-6">
-              <a href="#" className={`w-9 h-9 border flex items-center justify-center transition-colors ${
+              <a href="https://www.instagram.com/oxmos_xs/" className={`w-9 h-9 border flex items-center justify-center transition-colors ${
                 darkMode
                   ? 'border-black/20 hover:bg-black hover:text-white'
                   : 'border-white/20 hover:bg-white hover:text-black'
@@ -28,13 +28,6 @@ export function Footer() {
                   : 'border-white/20 hover:bg-white hover:text-black'
               }`}>
                 <Facebook size={16} />
-              </a>
-              <a href="#" className={`w-9 h-9 border flex items-center justify-center transition-colors ${
-                darkMode
-                  ? 'border-black/20 hover:bg-black hover:text-white'
-                  : 'border-white/20 hover:bg-white hover:text-black'
-              }`}>
-                <Twitter size={16} />
               </a>
             </div>
           </div>

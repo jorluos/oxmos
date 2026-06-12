@@ -60,3 +60,6 @@ Seria exactamente el mismo proceso para las demas tablas como
 - wishlist_items
 - cart
 - cart_items
+
+En el caso de orders se pude ver como si orders fuera la factura y order_items los renglones de la factura.
+Para las tablas cart y cart_items, cart es el carrito del supermercado y car_items son los productos dentro del carrito. wishlist se puede ver como la lista de me gusta y wishlist_items es cada producto guardado en la lista.

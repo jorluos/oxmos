@@ -3,6 +3,7 @@ export type Gender = 'Mujer' | 'Hombre' | 'Unisex';
 export type OrderStatus = 'Pendiente' | 'En preparación' | 'Enviado' | 'Entregado' | 'Cancelado';
 export type Page =
   | 'landing'
+  | 'catalog-gender'
   | 'catalog'
   | 'product'
   | 'checkout'

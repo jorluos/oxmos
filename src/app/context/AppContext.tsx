@@ -5,6 +5,7 @@ import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from '../data';
 interface AppState {
   currentPage: Page;
   currentProductId: string | null;
+  catalogGender: Gender | null;
   cart: CartItem[];
   wishlist: string[];
   currentUser: User | null;
@@ -18,6 +19,7 @@ interface AppState {
 
 interface AppContextType extends AppState {
   navigate: (page: Page, productId?: string) => void;
+  selectCatalogGender: (gender: Gender) => void;
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string, size: string, color: string) => void;
   updateCartQty: (productId: string, size: string, color: string, qty: number) => void;
@@ -47,6 +49,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>({
     currentPage: 'landing',
     currentProductId: null,
+    catalogGender: null,
     cart: [],
     wishlist: [],
     currentUser: null,
@@ -60,6 +63,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const navigate = useCallback((page: Page, productId?: string) => {
     setState(s => ({ ...s, currentPage: page, currentProductId: productId ?? null, isCartOpen: false }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const selectCatalogGender = useCallback((gender: Gender) => {
+    setState(s => ({
+      ...s,
+      currentPage: 'catalog',
+      currentProductId: null,
+      catalogGender: gender,
+      isCartOpen: false,
+    }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -194,6 +208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         navigate,
+        selectCatalogGender,
         addToCart,
         removeFromCart,
         updateCartQty,

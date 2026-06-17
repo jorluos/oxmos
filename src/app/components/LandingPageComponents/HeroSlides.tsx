@@ -41,7 +41,7 @@ export function HeroSlides({ HERO_SLIDES }: HeroSlidesProps) {
           </p>
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => navigate('catalog')}
+              onClick={() => navigate('catalog-gender')}
               className="flex items-center gap-2 bg-white text-black px-8 py-3 text-sm tracking-widest uppercase hover:bg-black hover:text-white transition-colors"
             >
               Explorar Colección <ArrowRight size={16} />

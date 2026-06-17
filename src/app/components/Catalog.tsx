@@ -19,11 +19,11 @@ const SORT_LABELS: Record<SortOption, string> = {
 const PAGE_SIZE = 6;
 
 export function Catalog() {
-  const { products, darkMode } = useApp();
+  const { products, darkMode, catalogGender } = useApp();
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [section, setSection] = useState<SectionFilter>('TODOS');
   const [sort, setSort] = useState<SortOption>('recomendado');
-  const [selectedGenders, setSelectedGenders] = useState<Gender[]>([]);
+  const [selectedGenders, setSelectedGenders] = useState<Gender[]>(() => (catalogGender ? [catalogGender] : []));
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedLengths, setSelectedLengths] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);

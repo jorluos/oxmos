@@ -9,7 +9,7 @@ export function Header() {
 
   const navLinks = [
     { label: 'Inicio', page: 'landing' as const },
-    { label: 'Tienda', page: 'catalog' as const },
+    { label: 'Tienda', page: 'catalog-gender' as const },
     { label: 'Políticas', page: 'policies' as const },
   ];
 

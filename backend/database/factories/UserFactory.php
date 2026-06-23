@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -25,8 +26,20 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'role_id' => DB::table('roles')->where('slug', 'customer')->value('id')
+                ?? DB::table('roles')->insertGetId([
+                    'name' => 'Cliente',
+                    'slug' => 'customer',
+                    'description' => 'Usuario cliente de la tienda',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
+            'document_number' => fake()->unique()->numerify('##########'),
+            'phone' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
+            'birth_date' => fake()->date(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),

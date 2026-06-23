@@ -225,3 +225,53 @@ npm run build
 No hace falta instalar dependencias manualmente una por una; todo sale de `package.json`.
 
 
+
+## Autenticación
+Para la autenticación se utiliza un paquete oficial de Laravel conocido como Laravel Sanctum, el cual sirve para manejar la autenticación de usuarios en aplicaciones modernas, especialmente cuando se tien un frontend separado como en el caso de este proyecto.
+
+- El paquete Sanctum utiliza Tokens personales los cuales permite que cada usuario genere tokens para acceder a la API, útilies en apps móviles o clientes externos.
+- Utiliza Autenticación de SPA (Single Page Applications), lo cual funciona muy bien con frontends como React, porque gestiona sesiones seguras usando cookies y CSRF protection.
+- Ligero y simple: Es más fácil de configurar que Laravel Passport (que usa OAuth2)
+
+El flujo correcto es:
+
+```
+await axios.get('/sanctum/csrf-cookie')
+await axios.post('/register', data)
+await axios.get('api/user')
+```
+Primero se pide /sanctum/csrf-cookie para que laravel entregue la cookie CSRF. Luego se hace el POST/register. Después se consulta /api/user para obtener el usuario autenticado.
+
+
+## Nota
+```
+SESSION_DOMAIN=
+```
+Eso permite que Laravel use el dominio actual correctamente en local.
+
+Los deminios permitidos por Sanctum están en esta parte
+```
+SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:8000,127.0.0.1:5173,127.0.0.1:8000,localhost,127.0.0.1
+```
+Esto le dice a sanctum: "estas URLs pertenecen al frontend confiable". Sin eso, Laravel puede tratar la petición como externa y no asociarla bien con la sesión.
+
+Cambiar los CORS al momento de subir a producción. 
+
+### AXIOS
+Ya está configurado correctamente, al momento de subir a producción se debe cambiar .baseURL
+
+```
+axios.defaults.baseURL = 'http://localhost:8000';
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+```
+Esta configuración de AXIOS es clave porque permite enviar cookies y el token CSRF en las peticiones.
+
+## Nota
+El header ahora puede saber si hay sesión. 
+Después del registro, el frontend consulta:
+```
+const { data } = await axios.get('/api/user')
+```
+
+Ese usuario se guarda en currentUser, entonces el header cambia de "ingresar" a mostrar el usuario logueado, además en el contexto se agrega una consulta inicial a /api/user para que si se refresca la página y la cookie sigue viva, el frontend vuelva a cargar el usuario automáticamente.

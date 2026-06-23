@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Product, CartItem, User, Order, Page } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from '../data';
+import axios from '../../axios';
 
 interface AppState {
   currentPage: Page;
@@ -24,6 +25,7 @@ interface AppContextType extends AppState {
   clearCart: () => void;
   toggleWishlist: (productId: string) => void;
   setCartOpen: (open: boolean) => void;
+  setCurrentUser: (user: User | null) => void;
   login: (correo: string, password: string) => boolean;
   logout: () => void;
   register: (user: Omit<User, 'id'>) => boolean;
@@ -42,6 +44,26 @@ interface AppContextType extends AppState {
 }
 
 const AppContext = createContext<AppContextType | null>(null);
+
+const toAppUser = (user: {
+  id: number | string;
+  first_name?: string;
+  last_name?: string;
+  document_number?: string | null;
+  phone?: string | null;
+  email?: string;
+  birth_date?: string | null;
+}): User => ({
+  id: String(user.id),
+  nombres: user.first_name ?? '',
+  apellidos: user.last_name ?? '',
+  cedula: user.document_number ?? '',
+  telefono: user.phone ?? '',
+  correo: user.email ?? '',
+  cumpleanos: user.birth_date ?? '',
+  direccion: '',
+  password: '',
+});
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>({
@@ -111,6 +133,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setCartOpen = useCallback((open: boolean) => setState(s => ({ ...s, isCartOpen: open })), []);
+
+  const setCurrentUser = useCallback((user: User | null) => {
+    setState(s => ({ ...s, currentUser: user }));
+  }, []);
 
   const login = useCallback((correo: string, password: string): boolean => {
     const user = state.users.find(u => u.correo === correo && u.password === password);
@@ -189,6 +215,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, darkMode: !s.darkMode }));
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    axios
+      .get('/api/user')
+      .then(({ data }) => {
+        if (active) {
+          setState(s => ({ ...s, currentUser: toAppUser(data) }));
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setState(s => ({ ...s, currentUser: null }));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -200,6 +247,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         toggleWishlist,
         setCartOpen,
+        setCurrentUser,
         login,
         logout,
         register,

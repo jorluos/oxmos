@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import axios from '../../axios';
+import type { User } from '../types';
+import { Field } from './Field';
 
 export function Register() {
-  const { register, navigate } = useApp();
+  const { setCurrentUser, navigate } = useApp();
   const [form, setForm] = useState({
     nombres: '', apellidos: '', cedula: '', telefono: '',
     correo: '', cumpleanos: '', direccion: '', password: '', confirmPassword: '',
@@ -27,45 +30,85 @@ export function Register() {
     if (!form.correo.trim() || !form.correo.includes('@')) e.correo = 'Correo inválido';
     if (!form.cumpleanos) e.cumpleanos = 'Requerido';
     if (!form.direccion.trim()) e.direccion = 'Requerido';
-    if (!form.password || form.password.length < 6) e.password = 'Mínimo 6 caracteres';
+    if (!form.password || form.password.length < 8) e.password = 'Mínimo 8 caracteres';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Las contraseñas no coinciden';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    const { confirmPassword, ...userData } = form;
-    const success = register(userData);
-    if (success) {
+    try {
+      await axios.get('/sanctum/csrf-cookie', {
+        withCredentials: true,
+      });
+
+      await axios.post(
+        '/register',
+        {
+          first_name: form.nombres,
+          last_name: form.apellidos,
+          document_number: form.cedula,
+          phone: form.telefono,
+          email: form.correo,
+          birth_date: form.cumpleanos,
+          password: form.password,
+          password_confirmation: form.confirmPassword,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      const { data } = await axios.get('/api/user', {
+        withCredentials: true,
+      });
+
+      const user: User = {
+        id: String(data.id),
+        nombres: data.first_name ?? form.nombres,
+        apellidos: data.last_name ?? form.apellidos,
+        cedula: data.document_number ?? form.cedula,
+        telefono: data.phone ?? form.telefono,
+        correo: data.email ?? form.correo,
+        cumpleanos: data.birth_date ?? form.cumpleanos,
+        direccion: '',
+        password: '',
+      };
+
+      setCurrentUser(user);
       navigate('catalog');
-    } else {
-      setGlobalError('Este correo ya está registrado.');
+    } catch (error: any) {
+      if (error?.response?.status === 422) {
+        setGlobalError('No se pudo registrar. Verifica los datos o usa otro correo.');
+      } else {
+        setGlobalError('No se pudo crear la cuenta. Inténtalo de nuevo.');
+      }
     }
   };
 
-  const Field = ({
-    label, name, type = 'text', placeholder = '',
-  }: {
-    label: string; name: keyof typeof form; type?: string; placeholder?: string;
-  }) => (
-    <div>
-      <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">{label} *</label>
-      <input
-        type={type}
-        value={form[name]}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          update(name, e.target.value)
-        }
-        placeholder={placeholder}
-        className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
-          errors[name] ? 'border-red-400' : 'border-black/20 focus:border-black'
-        }`}
-      />
-      {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
-    </div>
-  );
+  // const Field = ({
+  //   label, name, type = 'text', placeholder = '',
+  // }: {
+  //   label: string; name: keyof typeof form; type?: string; placeholder?: string;
+  // }) => (
+  //   <div>
+  //     <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">{label} *</label>
+  //     <input
+  //       type={type}
+  //       value={form[name]}
+  //       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+  //         update(name, e.target.value)
+  //       }
+  //       placeholder={placeholder}
+  //       className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
+  //         errors[name] ? 'border-red-400' : 'border-black/20 focus:border-black'
+  //       }`}
+  //     />
+  //     {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
+  //   </div>
+  // );
 
   return (
     <div className="pt-16 min-h-screen bg-white">
@@ -77,15 +120,15 @@ export function Register() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Nombres" name="nombres" placeholder="María" />
-            <Field label="Apellidos" name="apellidos" placeholder="García López" />
-            <Field label="Número de cédula" name="cedula" placeholder="1234567890" />
-            <Field label="Teléfono / WhatsApp" name="telefono" type="tel" placeholder="3001234567" />
+            <Field label="Nombres" name="nombres" placeholder="María" value={form.nombres} error={errors.nombres} onChange={(value) => update('nombres', value)} />
+            <Field label="Apellidos" name="apellidos" placeholder="García López" value={form.apellidos} error={errors.apellidos} onChange={(value) => update('apellidos', value)} />
+            <Field label="Número de cédula" name="cedula" placeholder="1234567890" value={form.cedula} error={errors.cedula} onChange={(value) => update('cedula', value)} />
+            <Field label="Teléfono / WhatsApp" name="telefono" type="tel" placeholder="3001234567" value={form.telefono} error={errors.telefono} onChange={(value) => update('telefono', value)} />
           </div>
 
-          <Field label="Correo electrónico" name="correo" type="email" placeholder="tu@correo.com" />
-          <Field label="Fecha de cumpleaños" name="cumpleanos" type="date" />
-          <Field label="Dirección de residencia" name="direccion" placeholder="Calle, carrera, número, ciudad" />
+          <Field label="Correo electrónico" name="correo" type="email" placeholder="tu@correo.com" value={form.correo} error={errors.correo} onChange={(value) => update('correo', value)} />
+          <Field label="Fecha de cumpleaños" name="cumpleanos" type="date" value={form.cumpleanos} error={errors.cumpleanos} onChange={(value) => update('cumpleanos', value)} />
+          <Field label="Dirección de residencia" name="direccion" placeholder="Calle, carrera, número, ciudad" value={form.direccion} error={errors.direccion} onChange={(value) => update('direccion', value)} />
 
           <div>
             <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Contraseña *</label>
@@ -97,7 +140,7 @@ export function Register() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   update('password', e.target.value)
                 }
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 className={`w-full border px-4 py-3 text-sm outline-none pr-12 ${
                   errors.password ? 'border-red-400' : 'border-black/20 focus:border-black'
                 }`}

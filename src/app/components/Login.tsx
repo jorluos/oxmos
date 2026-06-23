@@ -1,19 +1,53 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import axios from '../../axios';
+import type { User } from '../types';
 
 export function Login() {
-  const { login, navigate } = useApp();
+  const { setCurrentUser, navigate } = useApp();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(correo, password)) {
+    try {
+      await axios.get('/sanctum/csrf-cookie', {
+        withCredentials: true,
+      });
+
+      await axios.post(
+        '/login',
+        {
+          email: correo,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      const { data } = await axios.get('/api/user', {
+        withCredentials: true,
+      });
+
+      const user: User = {
+        id: String(data.id),
+        nombres: data.first_name ?? '',
+        apellidos: data.last_name ?? '',
+        cedula: data.document_number ?? '',
+        telefono: data.phone ?? '',
+        correo: data.email ?? correo,
+        cumpleanos: data.birth_date ?? '',
+        direccion: '',
+        password: '',
+      };
+
+      setCurrentUser(user);
       navigate('catalog');
-    } else {
+    } catch (err) {
       setError('Correo o contraseña incorrectos.');
     }
   };

@@ -1,11 +1,21 @@
 import { useState } from 'react';
 import { ShoppingBag, Heart, User, Menu, X, Search, ChevronDown, Moon, Sun } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import axios from '../../axios';
 
 export function Header() {
   const { navigate, cartCount, wishlist, currentUser, logout, currentPage, darkMode, toggleDarkMode, setCartOpen } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/logout', {}, { withCredentials: true });
+    } finally {
+      logout();
+      navigate('landing');
+    }
+  };
 
   const navLinks = [
     { label: 'Inicio', page: 'landing' as const },
@@ -120,7 +130,7 @@ export function Header() {
                     <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-black'}`}>{currentUser.nombres}</p>
                   </div>
                   <button
-                    onClick={() => { logout(); navigate('landing'); }}
+                    onClick={handleLogout}
                     className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                       darkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-black'
                     }`}

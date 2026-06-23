@@ -1,6 +1,4 @@
-# Ecommerce de ropa prototipo
-
-Este prototipo corre con Vite + React + TypeScript + Tailwind.
+# Ecommerce Oxmos
 
 ## Estado actual
 

@@ -30,8 +30,8 @@ const HERO_SLIDES = [
 
 const FEATURES = [
   { icon: '🚚', title: 'Envío Nacional', desc: 'Llegamos a toda Colombia.' },
-  { icon: '💳', title: 'Pago Contra Entrega', desc: 'Pagas cuando recibes tu pedido. Sin riesgos.' },
-  { icon: '↩️', title: 'Cambios Gratis', desc: 'Hasta 15 días para cambiar de talla o estilo.' },
+  { icon: '💳', title: 'Pago con Wompi', desc: 'Tarjetas, PSE, Nequi y Bancolombia' },
+  { icon: '↩️', title: 'Cambios', desc: 'Hasta 15 días para cambiar de talla o estilo.' },
   { icon: '✅', title: 'Calidad Garantizada', desc: 'Materiales premium seleccionados con cuidado.' },
 ];
 

@@ -1,5 +1,7 @@
 import { useApp } from '../../context/AppContext';
 import { ArrowRight } from 'lucide-react';
+import mujerImage from '../../../../assets/mujer.png';
+import hombreImage from '../../../../assets/hombre.png';
 
 export function TwoColumnPromo() {
     const { navigate } = useApp();
@@ -10,7 +12,7 @@ export function TwoColumnPromo() {
             onClick={() => navigate('catalog')}
           >
             <img
-              src="https://images.unsplash.com/photo-1769103638527-3240c2f5d4ad?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=700&h=500&q=80"
+              src={mujerImage}
               alt="Mujer"
               className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
             />
@@ -28,7 +30,7 @@ export function TwoColumnPromo() {
             onClick={() => navigate('catalog')}
           >
             <img
-              src="https://images.unsplash.com/photo-1731505583021-16c3a17339cd?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=700&h=500&q=80"
+              src={hombreImage}
               alt="Hombre"
               className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
             />

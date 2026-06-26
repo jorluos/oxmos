@@ -6,4 +6,6 @@ Route::get('/', function () {
     return ['Laravel' => app()->version()];
 });
 
-require __DIR__.'/auth.php';
+Route::prefix('api')->middleware('web')->group(function () {
+    require __DIR__.'/auth.php';
+});

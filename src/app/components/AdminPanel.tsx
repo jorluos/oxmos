@@ -18,24 +18,34 @@ export function AdminPanel() {
   const [productModal, setProductModal] = useState<{ open: boolean; product: Product | null }>({
     open: false, product: null,
   });
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'product' | 'order'; id: number } | null>(null);
   const [orderFilter, setOrderFilter] = useState<OrderStatus | 'Todos'>('Todos');
 
-  const pendingOrders = orders.filter(o => o.status === 'Pendiente').length;
+  const pendingOrders = orders.filter(o => o.status === 'pendiente').length;
 
-  const handleModalSave = (data: Omit<Product, 'id'> | Partial<Product>) => {
+  const handleModalSave = async (data: any) => {
     if (productModal.product) {
-      updateProduct(productModal.product.id, data as Partial<Product>);
+      // Editar producto existente — enviar como JSON
+      await updateProduct(productModal.product.id, {
+        ...data,
+        variants: data._variants,
+        images: data._images,
+      } as any);
     } else {
-      addProduct(data as Omit<Product, 'id'>);
+      // Nuevo producto — enviar como JSON en lugar de FormData
+      await addProduct({
+        ...data,
+        variants: data._variants,
+        images: data._images,
+      } as any);
     }
   };
 
-  const handleDeleteConfirm = (id: string) => {
-    if (id.startsWith('order-')) {
-      deleteOrder(id.replace('order-', ''));
+  const handleDeleteConfirm = async (confirm: { type: 'product' | 'order'; id: number }) => {
+    if (confirm.type === 'order') {
+      await deleteOrder(confirm.id);
     } else {
-      deleteProduct(id);
+      await deleteProduct(confirm.id);
     }
     setDeleteConfirm(null);
   };
@@ -121,7 +131,7 @@ export function AdminPanel() {
             <AdminProducts
               products={products}
               onEdit={product => setProductModal({ open: true, product })}
-              onDelete={id => setDeleteConfirm(id)}
+              onDelete={(id: string) => setDeleteConfirm({ type: 'product', id: Number(id) })}
               onNew={() => setProductModal({ open: true, product: null })}
               productModal={productModal}
               onModalSave={handleModalSave}
@@ -133,7 +143,7 @@ export function AdminPanel() {
               orders={orders}
               orderFilter={orderFilter}
               onFilterChange={setOrderFilter}
-              onDelete={id => setDeleteConfirm(`order-${id}`)}
+              onDelete={(id: string) => setDeleteConfirm({ type: 'order', id: Number(id) })}
             />
           )}
         </div>

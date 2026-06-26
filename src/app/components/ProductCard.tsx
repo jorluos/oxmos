@@ -1,8 +1,9 @@
-import type { MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { Product } from '../types';
 import { formatPrice } from '../data';
+import { getProductPrimaryImage, getProductColors, getProductDiscount, getProductCategoryLabel } from './productHelpers';
 
 interface ProductCardProps {
   product: Product;
@@ -10,55 +11,52 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { navigate, toggleWishlist, wishlist, addToCart, darkMode } = useApp();
-  const isWishlisted = wishlist.includes(product.id);
+  const isWishlisted = wishlist.includes(product.id as number);
+
+  const primaryImage = getProductPrimaryImage(product);
+  const colors = getProductColors(product);
+  const discount = getProductDiscount(product);
+  const categoryLabel = getProductCategoryLabel(product);
 
   const handleQuickAdd = (e: MouseEvent) => {
     e.stopPropagation();
-    const defaultSize = product.sizes.find(s => (product.stock[s] ?? 0) > 0) ?? product.sizes[0];
-    addToCart({ productId: product.id, size: defaultSize, color: product.colors[0], quantity: 1 });
+    // Encontrar la primera variante con stock disponible
+    const firstVariant = product.variants?.find(v => v.is_active && v.stock > 0) ?? product.variants?.[0];
+    if (firstVariant) {
+      addToCart(product.id as number, firstVariant.id, 1);
+    }
   };
 
   const handleWishlist = (e: MouseEvent) => {
     e.stopPropagation();
-    toggleWishlist(product.id);
+    toggleWishlist(product.id as number);
   };
 
   return (
     <div
       className="group cursor-pointer"
-      onClick={() => navigate('product', product.id)}
+      onClick={() => navigate('product', String(product.id))}
     >
       {/* Image with hover effect */}
       <div className={`relative aspect-[3/4] overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-        {/* Front image */}
+        {/* Solo usamos la imagen primaria con hover simple */}
         <img
-          src={product.frontImage}
+          src={primaryImage}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0"
-        />
-        {/* Back image */}
-        <img
-          src={product.backImage}
-          alt={`${product.name} trasera`}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
+          className="absolute inset-0 w-full h-full object-cover"
         />
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          {product.category === 'NUEVO' && (
+          {categoryLabel && (
             <span className={`text-[9px] tracking-widest px-2 py-1 uppercase ${
               darkMode ? 'bg-white text-black' : 'bg-black text-white'
-            }`}>Nuevo</span>
+            }`}>{categoryLabel}</span>
           )}
-          {product.category === 'TENDENCIA' && (
-            <span className={`text-[9px] tracking-widest px-2 py-1 uppercase border ${
-              darkMode ? 'bg-black text-white border-white/20' : 'bg-white text-black border-black/20'
-            }`}>Tendencia</span>
-          )}
-          {product.discount && (
+          {discount && (
             <span className={`text-[9px] tracking-widest px-2 py-1 ${
               darkMode ? 'bg-white text-black' : 'bg-black text-white'
-            }`}>-{product.discount}%</span>
+            }`}>-{discount}%</span>
           )}
         </div>
 
@@ -94,30 +92,38 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="mt-3 px-0.5">
         <div className="flex items-center justify-between">
           <div>
-            <p className={`text-[11px] tracking-wide uppercase ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{product.gender} · {product.type}</p>
+            <p className={`text-[11px] tracking-wide uppercase ${darkMode ? 'text-white/40' : 'text-black/40'}`}>
+              {product.gender} · {product.type ?? 'General'}
+            </p>
             <p className={`text-sm mt-0.5 ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
           </div>
         </div>
 
         {/* Color swatches */}
-        <div className="flex items-center gap-1 mt-2">
-          {product.colors.map((color, i) => (
-            <div
-              key={i}
-              title={product.colorNames[i]}
-              className={`w-3.5 h-3.5 rounded-full border cursor-pointer hover:scale-125 transition-transform ${
-                darkMode ? 'border-white/20' : 'border-black/20'
-              }`}
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
+        {colors.length > 0 && (
+          <div className="flex items-center gap-1 mt-2">
+            {colors.map((c: { hex: string; name: string }, i: number) => (
+              <div
+                key={i}
+                title={c.name}
+                className={`w-3.5 h-3.5 rounded-full border cursor-pointer hover:scale-125 transition-transform ${
+                  darkMode ? 'border-white/20' : 'border-black/20'
+                }`}
+                style={{ backgroundColor: c.hex }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-center gap-2 mt-2">
-          <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>{formatPrice(product.price)}</span>
-          {product.originalPrice && (
-            <span className={`text-xs line-through ${darkMode ? 'text-white/30' : 'text-black/30'}`}>{formatPrice(product.originalPrice)}</span>
+          <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>
+            {formatPrice(product.base_price)}
+          </span>
+          {product.original_price && (
+            <span className={`text-xs line-through ${darkMode ? 'text-white/30' : 'text-black/30'}`}>
+              {formatPrice(product.original_price)}
+            </span>
           )}
         </div>
       </div>

@@ -1,71 +1,93 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { Product, CartItem, User, Order, Page } from '../types';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from '../data';
+import type { Product, CartItem, User, Order, Page, Address, ProductVariant } from '../types';
 import axios from '../../axios';
 
+// ============================================================
+// TIPOS
+// ============================================================
 interface AppState {
   currentPage: Page;
   currentProductId: string | null;
-  cart: CartItem[];
-  wishlist: string[];
+  cart: CartItem[];                           // Ahora usa el nuevo CartItem (alineado con DB)
+  wishlist: number[];                         // IDs de productos
   currentUser: User | null;
   isCartOpen: boolean;
-  products: Product[];
-  orders: Order[];
+  products: Product[];                        // Se llenan desde API
+  orders: Order[];                            // Se llenan desde API
   adminLoggedIn: boolean;
-  users: User[];
   darkMode: boolean;
 }
 
 interface AppContextType extends AppState {
   navigate: (page: Page, productId?: string) => void;
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: string, size: string, color: string) => void;
-  updateCartQty: (productId: string, size: string, color: string, qty: number) => void;
-  clearCart: () => void;
-  toggleWishlist: (productId: string) => void;
+  addToCart: (productId: number, variantId: number, quantity: number) => Promise<void>;
+  removeFromCart: (itemId: number) => Promise<void>;
+  updateCartQty: (itemId: number, qty: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  toggleWishlist: (productId: number) => Promise<void>;
   setCartOpen: (open: boolean) => void;
   setCurrentUser: (user: User | null) => void;
-  login: (correo: string, password: string) => boolean;
-  logout: () => void;
-  register: (user: Omit<User, 'id'>) => boolean;
-  adminLogin: (password: string) => boolean;
-  adminLogout: () => void;
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (id: string, updates: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
-  addOrder: (order: Omit<Order, 'id' | 'date'>) => string;
-  updateOrderStatus: (id: string, status: Order['status']) => void;
-  deleteOrder: (id: string) => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  register: (data: RegisterPayload) => Promise<boolean>;
+  adminLogin: (password: string) => Promise<boolean>;
+  adminLogout: () => Promise<void>;
+  addProduct: (product: any) => Promise<void>;
+  updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: number) => Promise<void>;
+  addOrder: (payload: PlaceOrderPayload) => Promise<string>;
+  updateOrderStatus: (id: number, status: string) => Promise<void>;
+  deleteOrder: (id: number) => Promise<void>;
   getProduct: (id: string) => Product | undefined;
   toggleDarkMode: () => void;
   cartTotal: number;
   cartCount: number;
 }
 
-const AppContext = createContext<AppContextType | null>(null);
+// Payloads auxiliares (pueden moverse a types/index.ts luego)
+interface RegisterPayload {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  phone?: string;
+  document_number?: string;
+  birth_date?: string;
+}
 
-const toAppUser = (user: {
-  id: number | string;
-  first_name?: string;
-  last_name?: string;
-  document_number?: string | null;
-  phone?: string | null;
-  email?: string;
-  birth_date?: string | null;
-}): User => ({
-  id: String(user.id),
-  nombres: user.first_name ?? '',
-  apellidos: user.last_name ?? '',
-  cedula: user.document_number ?? '',
-  telefono: user.phone ?? '',
-  correo: user.email ?? '',
-  cumpleanos: user.birth_date ?? '',
-  direccion: '',
-  password: '',
+interface PlaceOrderPayload {
+  address_id: number;
+  notes?: string;
+  payment_method: string;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+/** Convierte la respuesta del backend a User */
+const toUser = (data: any): User => ({
+  id: data.id,
+  first_name: data.first_name,
+  last_name: data.last_name,
+  email: data.email,
+  phone: data.phone ?? '',
+  document_number: data.document_number ?? '',
+  birth_date: data.birth_date ?? '',
+  is_active: data.is_active ?? true,
+  role_id: data.role_id ?? undefined,
+  role: data.role ?? undefined,
+  addresses: data.addresses ?? [],
 });
 
+// ============================================================
+// CONTEXTO
+// ============================================================
+const AppContext = createContext<AppContextType | null>(null);
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  // Estado inicial vacío (sin datos mock)
   const [state, setState] = useState<AppState>({
     currentPage: 'landing',
     currentProductId: null,
@@ -73,140 +95,326 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     wishlist: [],
     currentUser: null,
     isCartOpen: false,
-    products: INITIAL_PRODUCTS,
-    orders: INITIAL_ORDERS,
+    products: [],
+    orders: [],
     adminLoggedIn: false,
-    users: INITIAL_USERS,
     darkMode: false,
   });
 
+  // ==========================================================
+  // HELPERS: Fetch carrito, wishlist y productos desde API
+  // ==========================================================
+  const fetchCart = useCallback(async () => {
+    try {
+      const { data } = await axios.get('/api/cart');
+      setState(s => ({ ...s, cart: data.cart?.items ?? data.items ?? [] }));
+    } catch {
+      // No hay carrito activo o usuario no autenticado
+    }
+  }, []);
+
+  const fetchWishlist = useCallback(async () => {
+    try {
+      const { data } = await axios.get('/api/wishlist');
+      const ids = (data.wishlist?.items ?? data.items ?? []).map(
+        (item: any) => (typeof item === 'number' ? item : item.product_id)
+      );
+      setState(s => ({ ...s, wishlist: ids }));
+    } catch {
+      // No hay wishlist
+    }
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const { data } = await axios.get('/api/products');
+      // Backend responde: { success: true, data: { data: [...], meta: {...} } }
+      const productsList = data.data?.data ?? data.data ?? [];
+      setState(s => ({ ...s, products: productsList }));
+    } catch {
+      // Productos no disponibles
+    }
+  }, []);
+
+  // ==========================================================
+  // EFECTO INICIAL: Cargar productos públicos + sesión
+  // ==========================================================
+  useEffect(() => {
+    let active = true;
+
+    // Cargar productos públicos (siempre, sin importar auth)
+    fetchProducts();
+
+    // Recuperar sesión actual + carrito + wishlist (solo si autenticado)
+    const fetchSession = async () => {
+      try {
+        const { data } = await axios.get('/api/user');
+        if (active && data) {
+          setState(s => ({ ...s, currentUser: toUser(data) }));
+          fetchCart();
+          fetchWishlist();
+        }
+      } catch {
+        if (active) setState(s => ({ ...s, currentUser: null }));
+      }
+    };
+
+    fetchSession();
+
+    return () => { active = false; };
+  }, [fetchCart, fetchWishlist, fetchProducts]);
+
+  // ==========================================================
+  // NAVEGACIÓN
+  // ==========================================================
   const navigate = useCallback((page: Page, productId?: string) => {
     setState(s => ({ ...s, currentPage: page, currentProductId: productId ?? null, isCartOpen: false }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const addToCart = useCallback((item: CartItem) => {
-    setState(s => {
-      const existing = s.cart.find(
-        c => c.productId === item.productId && c.size === item.size && c.color === item.color
-      );
-      if (existing) {
-        return {
+  // ==========================================================
+  // CARRITO (API)
+  // ==========================================================
+  const addToCart = useCallback(async (productId: number, variantId: number, quantity: number) => {
+    try {
+      const { data } = await axios.post('/api/cart/items', {
+        product_id: productId,
+        product_variant_id: variantId,
+        quantity,
+      });
+      // Reemplazar el carrito local con la respuesta del backend
+      setState(s => ({
+        ...s,
+        cart: data.cart?.items ?? [...s.cart, data.item],
+        isCartOpen: true,
+      }));
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+    }
+  }, []);
+
+  const removeFromCart = useCallback(async (itemId: number) => {
+    try {
+      await axios.delete(`/api/cart/items/${itemId}`);
+      setState(s => ({
+        ...s,
+        cart: s.cart.filter(item => item.id !== itemId),
+      }));
+    } catch (err) {
+      console.error('Error removing from cart:', err);
+    }
+  }, []);
+
+  const updateCartQty = useCallback(async (itemId: number, quantity: number) => {
+    try {
+      await axios.put(`/api/cart/items/${itemId}`, { quantity });
+      setState(s => ({
+        ...s,
+        cart: s.cart.map(item =>
+          item.id === itemId ? { ...item, quantity } : item
+        ),
+      }));
+    } catch (err) {
+      console.error('Error updating cart:', err);
+    }
+  }, []);
+
+  const clearCart = useCallback(async () => {
+    try {
+      await axios.delete('/api/cart');
+      setState(s => ({ ...s, cart: [] }));
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+    }
+  }, []);
+
+  // ==========================================================
+  // WISHLIST (API)
+  // ==========================================================
+  const toggleWishlist = useCallback(async (productId: number) => {
+    try {
+      const isWished = state.wishlist.includes(productId);
+      if (isWished) {
+        await axios.delete(`/api/wishlist/${productId}`);
+        setState(s => ({
           ...s,
-          cart: s.cart.map(c =>
-            c.productId === item.productId && c.size === item.size && c.color === item.color
-              ? { ...c, quantity: c.quantity + item.quantity }
-              : c
-          ),
-          isCartOpen: true,
-        };
+          wishlist: s.wishlist.filter(id => id !== productId),
+        }));
+      } else {
+        await axios.post('/api/wishlist', { product_id: productId });
+        setState(s => ({
+          ...s,
+          wishlist: [...s.wishlist, productId],
+        }));
       }
-      return { ...s, cart: [...s.cart, item], isCartOpen: true };
-    });
+    } catch (err) {
+      console.error('Error toggling wishlist:', err);
+    }
+  }, [state.wishlist]);
+
+  // ==========================================================
+  // UI STATE (local, no API)
+  // ==========================================================
+  const setCartOpen = useCallback((open: boolean) => {
+    setState(s => ({ ...s, isCartOpen: open }));
   }, []);
 
-  const removeFromCart = useCallback((productId: string, size: string, color: string) => {
-    setState(s => ({
-      ...s,
-      cart: s.cart.filter(c => !(c.productId === productId && c.size === size && c.color === color)),
-    }));
-  }, []);
-
-  const updateCartQty = useCallback((productId: string, size: string, color: string, qty: number) => {
-    setState(s => ({
-      ...s,
-      cart: s.cart.map(c =>
-        c.productId === productId && c.size === size && c.color === color ? { ...c, quantity: qty } : c
-      ),
-    }));
-  }, []);
-
-  const clearCart = useCallback(() => setState(s => ({ ...s, cart: [] })), []);
-
-  const toggleWishlist = useCallback((productId: string) => {
-    setState(s => ({
-      ...s,
-      wishlist: s.wishlist.includes(productId)
-        ? s.wishlist.filter(id => id !== productId)
-        : [...s.wishlist, productId],
-    }));
-  }, []);
-
-  const setCartOpen = useCallback((open: boolean) => setState(s => ({ ...s, isCartOpen: open })), []);
-
+  // ==========================================================
+  // USUARIO / AUTENTICACIÓN (API real con Sanctum)
+  // ==========================================================
   const setCurrentUser = useCallback((user: User | null) => {
     setState(s => ({ ...s, currentUser: user }));
   }, []);
 
-  const login = useCallback((correo: string, password: string): boolean => {
-    const user = state.users.find(u => u.correo === correo && u.password === password);
-    if (user) {
-      setState(s => ({ ...s, currentUser: user }));
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      await axios.get('/sanctum/csrf-cookie');
+      await axios.post('/api/login', { email, password });
+      const { data } = await axios.get('/api/user');
+      setState(s => ({ ...s, currentUser: toUser(data) }));
+      fetchCart();
+      fetchWishlist();
       return true;
+    } catch {
+      return false;
     }
-    return false;
-  }, [state.users]);
+  }, [fetchCart, fetchWishlist]);
 
-  const logout = useCallback(() => setState(s => ({ ...s, currentUser: null })), []);
+  const logout = useCallback(async () => {
+    try {
+      await axios.post('/api/logout');
+    } finally {
+      setState(s => ({ ...s, currentUser: null, cart: [], wishlist: [], adminLoggedIn: false }));
+    }
+  }, []);
 
-  const register = useCallback((userData: Omit<User, 'id'>): boolean => {
-    if (state.users.find(u => u.correo === userData.correo)) return false;
-    const newUser: User = { ...userData, id: `u${Date.now()}` };
-    setState(s => ({ ...s, users: [...s.users, newUser], currentUser: newUser }));
-    return true;
-  }, [state.users]);
-
-  const adminLogin = useCallback((password: string): boolean => {
-    if (password === 'admin123') {
-      setState(s => ({ ...s, adminLoggedIn: true }));
+  const register = useCallback(async (payload: RegisterPayload): Promise<boolean> => {
+    try {
+      await axios.get('/sanctum/csrf-cookie');
+      await axios.post('/api/register', payload);
+      const { data } = await axios.get('/api/user');
+      setState(s => ({ ...s, currentUser: toUser(data) }));
+      fetchCart();
+      fetchWishlist();
       return true;
+    } catch {
+      return false;
     }
-    return false;
+  }, [fetchCart, fetchWishlist]);
+
+  // ==========================================================
+  // ADMIN AUTH (API real)
+  // ==========================================================
+  const adminLogin = useCallback(async (password: string): Promise<boolean> => {
+    try {
+      await axios.get('/sanctum/csrf-cookie');
+      const { data } = await axios.post('/api/admin/login', { password });
+      if (data.success) {
+        setState(s => ({
+          ...s,
+          adminLoggedIn: true,
+          currentUser: toUser(data.user),
+        }));
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   }, []);
 
-  const adminLogout = useCallback(() => setState(s => ({ ...s, adminLoggedIn: false })), []);
-
-  const addProduct = useCallback((product: Omit<Product, 'id'>) => {
-    setState(s => ({
-      ...s,
-      products: [...s.products, { ...product, id: `p${Date.now()}` }],
-    }));
+  const adminLogout = useCallback(async () => {
+    try {
+      await axios.post('/api/admin/logout');
+    } finally {
+      setState(s => ({ ...s, adminLoggedIn: false, currentUser: null }));
+    }
   }, []);
 
-  const updateProduct = useCallback((id: string, updates: Partial<Product>) => {
-    setState(s => ({
-      ...s,
-      products: s.products.map(p => (p.id === id ? { ...p, ...updates } : p)),
-    }));
+  // ==========================================================
+  // PRODUCTOS (Admin API)
+  // ==========================================================
+  const addProduct = useCallback(async (productData: any) => {
+    try {
+      // Si es FormData, enviarlo directamente; si es objeto, enviar como JSON
+      const { data } = productData instanceof FormData
+        ? await axios.post('/api/admin/products', productData)
+        : await axios.post('/api/admin/products', productData, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+      // Backend responde: { success: true, data: { id, name, variants, images, category } }
+      setState(s => ({ ...s, products: [...s.products, data.data] }));
+    } catch (err: any) {
+      console.error('Error adding product:', err.response?.data ?? err.message);
+    }
   }, []);
 
-  const deleteProduct = useCallback((id: string) => {
-    setState(s => ({ ...s, products: s.products.filter(p => p.id !== id) }));
+  const updateProduct = useCallback(async (id: number, updates: Partial<Product>) => {
+    try {
+      const { data } = await axios.put(`/api/admin/products/${id}`, updates);
+      setState(s => ({
+        ...s,
+        products: s.products.map(p => (p.id === id ? { ...p, ...data.data } : p)),
+      }));
+    } catch (err) {
+      console.error('Error updating product:', err);
+    }
   }, []);
 
-  const addOrder = useCallback((order: Omit<Order, 'id' | 'date'>): string => {
-    const id = `ORD-${String(Date.now()).slice(-6)}`;
-    const newOrder: Order = { ...order, id, date: new Date().toISOString().split('T')[0] };
-    setState(s => ({ ...s, orders: [newOrder, ...s.orders] }));
-    return id;
+  const deleteProduct = useCallback(async (id: number) => {
+    try {
+      await axios.delete(`/api/admin/products/${id}`);
+      setState(s => ({ ...s, products: s.products.filter(p => p.id !== id) }));
+    } catch (err) {
+      console.error('Error deleting product:', err);
+    }
   }, []);
 
-  const updateOrderStatus = useCallback((id: string, status: Order['status']) => {
-    setState(s => ({
-      ...s,
-      orders: s.orders.map(o => (o.id === id ? { ...o, status } : o)),
-    }));
+  // ==========================================================
+  // ÓRDENES
+  // ==========================================================
+  const addOrder = useCallback(async (payload: PlaceOrderPayload): Promise<string> => {
+    try {
+      const { data } = await axios.post('/api/orders', payload);
+      setState(s => ({ ...s, orders: [data.order, ...s.orders] }));
+      return data.order.id;
+    } catch (err) {
+      console.error('Error placing order:', err);
+      return '';
+    }
   }, []);
 
-  const deleteOrder = useCallback((id: string) => {
-    setState(s => ({ ...s, orders: s.orders.filter(o => o.id !== id) }));
+  const updateOrderStatus = useCallback(async (id: number, status: string) => {
+    try {
+      await axios.put(`/api/admin/orders/${id}/status`, { status });
+      setState(s => ({
+        ...s,
+        orders: s.orders.map(o => (o.id === id ? { ...o, status: status as any } : o)),
+      }));
+    } catch (err) {
+      console.error('Error updating order status:', err);
+    }
   }, []);
 
-  const getProduct = useCallback((id: string) => state.products.find(p => p.id === id), [state.products]);
+  const deleteOrder = useCallback(async (id: number) => {
+    try {
+      await axios.delete(`/api/admin/orders/${id}`);
+      setState(s => ({ ...s, orders: s.orders.filter(o => o.id !== id) }));
+    } catch (err) {
+      console.error('Error deleting order:', err);
+    }
+  }, []);
+
+  // ==========================================================
+  // GETTERS
+  // ==========================================================
+  const getProduct = useCallback(
+    (id: string) => state.products.find(p => String(p.id) === id),
+    [state.products]
+  );
 
   const cartTotal = state.cart.reduce((total, item) => {
-    const product = state.products.find(p => p.id === item.productId);
-    return total + (product ? product.price * item.quantity : 0);
+    return total + item.unit_price * item.quantity;
   }, 0);
 
   const cartCount = state.cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -215,27 +423,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, darkMode: !s.darkMode }));
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    axios
-      .get('/api/user')
-      .then(({ data }) => {
-        if (active) {
-          setState(s => ({ ...s, currentUser: toAppUser(data) }));
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setState(s => ({ ...s, currentUser: null }));
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
+  // ==========================================================
+  // PROVIDER
+  // ==========================================================
   return (
     <AppContext.Provider
       value={{

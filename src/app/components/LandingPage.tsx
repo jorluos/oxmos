@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatPrice } from '../data';
+import { getProductPrimaryImage, getProductDiscount, getProductCategoryLabel, getMinVariantPrice } from './productHelpers';
 
 const HERO_SLIDES = [
   {
@@ -47,8 +48,13 @@ export function LandingPage() {
     return () => clearInterval(t);
   }, []);
 
-  const featured = products.filter(p => p.featured).slice(0, 4);
-  const newItems = products.filter(p => p.category === 'NUEVO').slice(0, 3);
+  // Productos destacados: is_featured = true
+  const featured = products.filter(p => p.is_featured).slice(0, 4);
+  // Productos nuevos: etiquetados como 'nuevo' en colecciones
+  const newItems = products.filter(p => {
+    const label = getProductCategoryLabel(p);
+    return label === 'Nuevo';
+  }).slice(0, 3);
 
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-black' : 'bg-white'}`}>
@@ -100,249 +106,210 @@ export function LandingPage() {
             />
           ))}
         </div>
-
-        {/* Slide controls */}
-        <button
-          onClick={() => setSlide(s => (s - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/20 hover:bg-white/40 flex items-center justify-center backdrop-blur-sm transition-colors"
-        >
-          <ChevronLeft size={20} className="text-white" />
-        </button>
-        <button
-          onClick={() => setSlide(s => (s + 1) % HERO_SLIDES.length)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/20 hover:bg-white/40 flex items-center justify-center backdrop-blur-sm transition-colors"
-        >
-          <ChevronRight size={20} className="text-white" />
-        </button>
       </section>
 
-      {/* Features strip */}
-      <section className={`py-8 transition-colors ${darkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {FEATURES.map(f => (
-              <div key={f.title} className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <span className="text-2xl">{f.icon}</span>
-                <div>
-                  <p className="text-sm font-medium tracking-wide">{f.title}</p>
-                  <p className={`text-xs mt-0.5 ${darkMode ? 'text-black/40' : 'text-white/40'}`}>{f.desc}</p>
+      {/* Featured section */}
+      <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-black' : 'bg-white'}`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <p className={`text-xs tracking-[0.3em] uppercase mb-2 ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Destacados</p>
+              <h2 className={`text-2xl sm:text-3xl ${darkMode ? 'text-white' : 'text-black'}`}>Productos Destacados</h2>
+            </div>
+            <button
+              onClick={() => navigate('catalog')}
+              className={`text-xs tracking-wider border-b pb-0.5 transition-colors hidden sm:block ${
+                darkMode ? 'text-white/40 border-white/20 hover:text-white hover:border-white' : 'text-black/40 border-black/20 hover:text-black hover:border-black'
+              }`}
+            >
+              Ver todo
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {featured.map(product => {
+              const imgUrl = getProductPrimaryImage(product);
+              const discount = getProductDiscount(product);
+              const categoryLabel = getProductCategoryLabel(product);
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => navigate('product', String(product.id))}
+                  className="group cursor-pointer"
+                >
+                  <div className={`relative aspect-[3/4] overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                    {imgUrl ? (
+                      <img src={imgUrl} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-black/20">Sin imagen</div>
+                    )}
+                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      {categoryLabel && (
+                        <span className={`text-[9px] tracking-widest px-2 py-1 uppercase ${
+                          darkMode ? 'bg-white text-black' : 'bg-black text-white'
+                        }`}>{categoryLabel}</span>
+                      )}
+                      {discount && <span className={`text-[9px] tracking-widest px-2 py-1 ${darkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>-{discount}%</span>}
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <p className={`text-[11px] tracking-wide uppercase ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{product.gender} · {product.type ?? 'General'}</p>
+                    <p className={`text-sm mt-0.5 ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
+                    <span className={`text-sm font-medium mt-1 block ${darkMode ? 'text-white' : 'text-black'}`}>
+                      {formatPrice(getMinVariantPrice(product))}
+                    </span>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Categories / Collections */}
+      <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-white/5' : 'bg-black/5'}`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <p className={`text-xs tracking-[0.3em] uppercase mb-2 ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Colecciones</p>
+            <h2 className={`text-2xl sm:text-3xl ${darkMode ? 'text-white' : 'text-black'}`}>Nuestras Colecciones</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Nuevos Ingresos', filter: 'NUEVO', img: 'https://images.unsplash.com/photo-1771591485611-45264af86618?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=600&h=800&q=80' },
+              { label: 'Tendencias', filter: 'TENDENCIA', img: 'https://images.unsplash.com/photo-1769103638527-3240c2f5d4ad?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=600&h=800&q=80' },
+              { label: 'Ofertas Especiales', filter: 'OFERTA', img: 'https://images.unsplash.com/photo-1769458711036-17514a5838cb?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=600&h=800&q=80' },
+            ].map(col => (
+              <button
+                key={col.label}
+                onClick={() => navigate('catalog')}
+                className="group relative h-72 sm:h-96 overflow-hidden"
+              >
+                <img src={col.img} alt={col.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
+                  <div className="text-left">
+                    <p className="text-white text-lg font-medium">{col.label}</p>
+                    <p className="text-white/50 text-xs tracking-widest uppercase mt-1">Ver colección →</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* New arrivals */}
+      {newItems.length > 0 && (
+        <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-black' : 'bg-white'}`}>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className={`text-xs tracking-[0.3em] uppercase mb-2 ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Nuevos</p>
+                <h2 className={`text-2xl sm:text-3xl ${darkMode ? 'text-white' : 'text-black'}`}>Nuevos Ingresos</h2>
+              </div>
+              <button
+                onClick={() => navigate('catalog')}
+                className={`text-xs tracking-wider border-b pb-0.5 transition-colors hidden sm:block ${
+                  darkMode ? 'text-white/40 border-white/20 hover:text-white hover:border-white' : 'text-black/40 border-black/20 hover:text-black hover:border-black'
+                }`}
+              >
+                Ver todo
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {newItems.map(product => {
+                const imgUrl = getProductPrimaryImage(product);
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => navigate('product', String(product.id))}
+                    className="group cursor-pointer"
+                  >
+                    <div className={`relative aspect-[3/4] overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-black/20">Sin imagen</div>
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <p className={`text-xs mt-0.5 truncate ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
+                      <span className={`text-xs font-medium ${darkMode ? 'text-white/70' : 'text-black/60'}`}>
+                        {formatPrice(getMinVariantPrice(product))}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features */}
+      <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-white/5' : 'bg-black/5'}`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+            {FEATURES.map(f => (
+              <div key={f.title} className="text-center">
+                <span className="text-4xl block mb-3">{f.icon}</span>
+                <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-black'}`}>{f.title}</p>
+                <p className={`text-xs ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Section divider: NUEVO */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <span className={`text-xs tracking-[0.4em] uppercase ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Recién llegado</span>
-            <h2 className={`mt-1 ${darkMode ? 'text-white' : 'text-black'}`}>Lo Más Nuevo</h2>
-          </div>
-          <button
-            onClick={() => navigate('catalog')}
-            className={`flex items-center gap-1 text-sm tracking-wide border-b pb-0.5 hover:opacity-60 transition-opacity ${
-              darkMode ? 'border-white text-white' : 'border-black text-black'
-            }`}
-          >
-            Ver todo <ArrowRight size={14} />
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {newItems.map(product => (
-            <button
-              key={product.id}
-              onClick={() => navigate('product', product.id)}
-              className="group text-left"
-            >
-              <div className={`aspect-[3/4] overflow-hidden relative ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                <img
-                  src={product.frontImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span className={`absolute top-3 left-3 text-[10px] tracking-widest px-2 py-1 ${
-                  darkMode ? 'bg-white text-black' : 'bg-black text-white'
-                }`}>
-                  NUEVO
-                </span>
-              </div>
-              <div className="mt-3">
-                <p className={`text-xs tracking-wide ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{product.gender} · {product.type}</p>
-                <p className={`mt-0.5 text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
-                <p className={`mt-1 text-sm ${darkMode ? 'text-white' : 'text-black'}`}>{formatPrice(product.price)}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Big editorial banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className={`relative h-96 sm:h-[500px] overflow-hidden ${darkMode ? 'bg-white' : 'bg-black'}`}>
-          <img
-            src="https://images.unsplash.com/photo-1666932521131-d990bd263a2c?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=600&q=80"
-            alt="Editorial"
-            className="w-full h-full object-cover opacity-70"
-          />
-          <div className={`absolute inset-0 flex flex-col items-center justify-center text-center px-4 ${
-            darkMode ? 'text-black' : 'text-white'
-          }`}>
-            <span className={`text-xs tracking-[0.5em] uppercase mb-3 ${darkMode ? 'text-black/60' : 'text-white/60'}`}>Tendencia de la temporada</span>
-            <h2 className={`text-4xl sm:text-6xl mb-6 ${darkMode ? 'text-black' : 'text-white'}`}>Elegancia Oscura</h2>
-            <button
-              onClick={() => navigate('catalog')}
-              className={`px-10 py-3 text-sm tracking-widest uppercase border transition-colors ${
-                darkMode
-                  ? 'bg-black text-white hover:bg-white hover:text-black border-black'
-                  : 'bg-white text-black hover:bg-black hover:text-white border-white'
-              }`}
-            >
-              Descubrir
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured products */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <span className={`text-xs tracking-[0.4em] uppercase ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Destacados</span>
-            <h2 className={`mt-1 ${darkMode ? 'text-white' : 'text-black'}`}>Favoritos del Momento</h2>
-          </div>
-          <button
-            onClick={() => navigate('catalog')}
-            className={`flex items-center gap-1 text-sm tracking-wide border-b pb-0.5 hover:opacity-60 transition-opacity ${
-              darkMode ? 'border-white text-white' : 'border-black text-black'
-            }`}
-          >
-            Ver todo <ArrowRight size={14} />
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {featured.map(product => (
-            <button
-              key={product.id}
-              onClick={() => navigate('product', product.id)}
-              className="group text-left"
-            >
-              <div className={`aspect-[3/4] overflow-hidden relative ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                <img
-                  src={product.frontImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0 absolute inset-0"
-                />
-                <img
-                  src={product.backImage}
-                  alt={`${product.name} trasera`}
-                  className="w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
-                />
-                {product.discount && (
-                  <span className={`absolute top-3 right-3 text-[10px] px-2 py-0.5 ${
-                    darkMode ? 'bg-white text-black' : 'bg-black text-white'
-                  }`}>
-                    -{product.discount}%
-                  </span>
-                )}
-              </div>
-              <div className="mt-3 px-1">
-                <p className={`text-xs tracking-wide ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{product.type}</p>
-                <p className={`mt-0.5 text-sm ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>{formatPrice(product.price)}</span>
-                  {product.originalPrice && (
-                    <span className={`text-xs line-through ${darkMode ? 'text-white/30' : 'text-black/30'}`}>{formatPrice(product.originalPrice)}</span>
-                  )}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Two column promo */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div
-            className="relative h-72 sm:h-96 overflow-hidden bg-black cursor-pointer group"
-            onClick={() => navigate('catalog')}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1769103638527-3240c2f5d4ad?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=700&h=500&q=80"
-              alt="Mujer"
-              className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-6 left-6 text-white">
-              <p className="text-xs tracking-[0.3em] uppercase text-white/60 mb-1">Colección</p>
-              <h3 className="text-2xl text-white">Mujer</h3>
-              <span className="flex items-center gap-1 text-sm mt-2 underline underline-offset-4">
-                Explorar <ArrowRight size={14} />
-              </span>
-            </div>
-          </div>
-          <div
-            className="relative h-72 sm:h-96 overflow-hidden bg-black cursor-pointer group"
-            onClick={() => navigate('catalog')}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1731505583021-16c3a17339cd?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=700&h=500&q=80"
-              alt="Hombre"
-              className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-6 left-6 text-white">
-              <p className="text-xs tracking-[0.3em] uppercase text-white/60 mb-1">Colección</p>
-              <h3 className="text-2xl text-white">Hombre</h3>
-              <span className="flex items-center gap-1 text-sm mt-2 underline underline-offset-4">
-                Explorar <ArrowRight size={14} />
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Testimonials */}
-      
-
-      {/* Newsletter */}
-      <section className="py-20 px-4 bg-[#08080861]">
-        <div className="max-w-xl mx-auto text-center">
-          <span className={`text-xs tracking-[0.4em] uppercase mb-3 block ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Newsletter</span>
-          <h2 className={`mb-3 ${darkMode ? 'text-white' : 'text-black'}`}>Sé el Primero en Saber</h2>
-          <p className={`text-sm mb-8 ${darkMode ? 'text-white/50' : 'text-black/50'}`}>
-            Recibe novedades, descuentos exclusivos y tendencias directamente en tu correo.
+      <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-black' : 'bg-white'}`}>
+        <div className="max-w-3xl mx-auto text-center">
+          <Quote size={32} className={`mx-auto mb-6 ${darkMode ? 'text-white/20' : 'text-black/20'}`} />
+          <p className={`text-lg sm:text-xl leading-relaxed mb-6 ${darkMode ? 'text-white/80' : 'text-black/70'}`}>
+            "{TESTIMONIALS[testimonialIdx].text}"
           </p>
-          <form
-            className="flex flex-col sm:flex-row gap-2"
-            onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
-              e.preventDefault();
-              alert('¡Gracias por suscribirte!');
-            }}
-          >
-            <input
-              type="email"
-              placeholder="Tu correo electrónico"
-              className={`flex-1 border px-4 py-3 text-sm outline-none transition-colors ${
-                darkMode
-                  ? 'border-white/20 bg-black text-white placeholder:text-white/40 focus:border-white'
-                  : 'border-black/20 bg-white text-black placeholder:text-black/40 focus:border-black'
-              }`}
-              required
-            />
+          <div className="flex items-center justify-center gap-1 mb-3">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Star key={i} size={14} className={darkMode ? 'fill-white text-white' : 'fill-black text-black'} />
+            ))}
+          </div>
+          <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>{TESTIMONIALS[testimonialIdx].name}</p>
+          <p className={`text-xs ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{TESTIMONIALS[testimonialIdx].city}</p>
+          <div className="flex justify-center gap-3 mt-6">
             <button
-              type="submit"
-              className={`px-8 py-3 text-sm tracking-widest uppercase transition-colors whitespace-nowrap ${
-                darkMode
-                  ? 'bg-white text-black hover:bg-white/80'
-                  : 'bg-black text-white hover:bg-black/80'
+              onClick={() => setTestimonialIdx(i => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)}
+              className={`w-9 h-9 border flex items-center justify-center transition-colors ${
+                darkMode ? 'border-white/20 hover:border-white text-white' : 'border-black/20 hover:border-black text-black'
               }`}
             >
-              Suscribirme
+              <ChevronLeft size={16} />
             </button>
-          </form>
+            <button
+              onClick={() => setTestimonialIdx(i => (i + 1) % TESTIMONIALS.length)}
+              className={`w-9 h-9 border flex items-center justify-center transition-colors ${
+                darkMode ? 'border-white/20 hover:border-white text-white' : 'border-black/20 hover:border-black text-black'
+              }`}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-white/5' : 'bg-black/5'}`}>
+        <div className="max-w-7xl mx-auto text-center">
+          <p className={`text-xs tracking-[0.3em] uppercase mb-3 ${darkMode ? 'text-white/40' : 'text-black/40'}`}>#OxmosStyle</p>
+          <h2 className={`text-2xl sm:text-4xl mb-4 ${darkMode ? 'text-white' : 'text-black'}`}>Descubre tu estilo</h2>
+          <p className={`text-sm max-w-md mx-auto mb-8 ${darkMode ? 'text-white/50' : 'text-black/50'}`}>
+            Explora nuestra colección completa y encuentra las prendas que definen tu personalidad.
+          </p>
+          <button
+            onClick={() => navigate('catalog')}
+            className={`inline-flex items-center gap-2 px-8 py-3 text-sm tracking-widest uppercase transition-colors ${
+              darkMode ? 'bg-white text-black hover:bg-white/80' : 'bg-black text-white hover:bg-black/80'
+            }`}
+          >
+            Ir a la tienda <ArrowRight size={16} />
+          </button>
         </div>
       </section>
     </div>

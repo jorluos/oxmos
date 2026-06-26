@@ -65,19 +65,7 @@ export function Register() {
         withCredentials: true,
       });
 
-      const user: User = {
-        id: String(data.id),
-        nombres: data.first_name ?? form.nombres,
-        apellidos: data.last_name ?? form.apellidos,
-        cedula: data.document_number ?? form.cedula,
-        telefono: data.phone ?? form.telefono,
-        correo: data.email ?? form.correo,
-        cumpleanos: data.birth_date ?? form.cumpleanos,
-        direccion: '',
-        password: '',
-      };
-
-      setCurrentUser(user);
+      setCurrentUser(data.data);  // Usamos directamente lo que devuelve el backend sin mapear campo por campo
       navigate('catalog');
     } catch (error: any) {
       if (error?.response?.status === 422) {
@@ -87,28 +75,6 @@ export function Register() {
       }
     }
   };
-
-  // const Field = ({
-  //   label, name, type = 'text', placeholder = '',
-  // }: {
-  //   label: string; name: keyof typeof form; type?: string; placeholder?: string;
-  // }) => (
-  //   <div>
-  //     <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">{label} *</label>
-  //     <input
-  //       type={type}
-  //       value={form[name]}
-  //       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-  //         update(name, e.target.value)
-  //       }
-  //       placeholder={placeholder}
-  //       className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
-  //         errors[name] ? 'border-red-400' : 'border-black/20 focus:border-black'
-  //       }`}
-  //     />
-  //     {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
-  //   </div>
-  // );
 
   return (
     <div className="pt-16 min-h-screen bg-white">

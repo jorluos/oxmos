@@ -1,13 +1,22 @@
 import { ShoppingCart, TrendingUp, AlertCircle, Package } from 'lucide-react';
-import type { Product, Order, OrderStatus } from '../../types';
-import { formatPrice } from '../../data';
+import type { Product, Order } from '../../types';
 
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  'Pendiente': 'bg-yellow-100 text-yellow-800',
-  'En preparación': 'bg-blue-100 text-blue-800',
-  'Enviado': 'bg-purple-100 text-purple-800',
-  'Entregado': 'bg-green-100 text-green-800',
-  'Cancelado': 'bg-red-100 text-red-800',
+const formatPrice = (n: number) => '$' + n.toLocaleString('es-CO');
+
+const STATUS_LABELS: Record<string, string> = {
+  pendiente: 'Pendiente',
+  en_preparacion: 'En preparación',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pendiente: 'bg-yellow-100 text-yellow-800',
+  en_preparacion: 'bg-blue-100 text-blue-800',
+  enviado: 'bg-purple-100 text-purple-800',
+  entregado: 'bg-green-100 text-green-800',
+  cancelado: 'bg-red-100 text-red-800',
 };
 
 interface AdminDashboardProps {
@@ -19,10 +28,16 @@ interface AdminDashboardProps {
 export function AdminDashboard({ products, orders, onViewAllOrders }: AdminDashboardProps) {
   const stats = {
     totalOrders: orders.length,
-    pendingOrders: orders.filter(o => o.status === 'Pendiente').length,
-    totalRevenue: orders.filter(o => o.status === 'Entregado').reduce((s, o) => s + o.total, 0),
+    pendingOrders: orders.filter(o => o.status === 'pendiente').length,
+    totalRevenue: orders.filter(o => o.status === 'entregado').reduce((s, o) => s + o.total, 0),
     totalProducts: products.length,
   };
+
+  const formatDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString('es-CO') : '-';
+
+  const primaryImage = (p: Product) =>
+    p.images?.find(img => img.is_primary)?.image_url ?? p.images?.[0]?.image_url ?? '';
 
   return (
     <div className="space-y-8">
@@ -57,7 +72,7 @@ export function AdminDashboard({ products, orders, onViewAllOrders }: AdminDashb
           <table className="w-full">
             <thead>
               <tr className="border-b border-black/5">
-                {['Pedido', 'Cliente', 'Total', 'Estado', 'Fecha'].map(h => (
+                {['N° Pedido', 'Cliente', 'Total', 'Estado', 'Fecha'].map(h => (
                   <th key={h} className="text-left text-[10px] tracking-widest uppercase text-black/40 px-6 py-3 font-normal">{h}</th>
                 ))}
               </tr>
@@ -65,13 +80,15 @@ export function AdminDashboard({ products, orders, onViewAllOrders }: AdminDashb
             <tbody>
               {orders.slice(0, 5).map(order => (
                 <tr key={order.id} className="border-b border-black/5 hover:bg-black/2 transition-colors">
-                  <td className="px-6 py-3 text-sm font-mono">{order.id}</td>
-                  <td className="px-6 py-3 text-sm">{order.customerName}</td>
+                  <td className="px-6 py-3 text-sm font-mono">{order.order_number}</td>
+                  <td className="px-6 py-3 text-sm">{order.customer_name ?? order.user?.first_name + ' ' + order.user?.last_name}</td>
                   <td className="px-6 py-3 text-sm">{formatPrice(order.total)}</td>
                   <td className="px-6 py-3">
-                    <span className={`text-xs px-2 py-1 ${STATUS_COLORS[order.status]}`}>{order.status}</span>
+                    <span className={`text-xs px-2 py-1 ${STATUS_COLORS[order.status] ?? 'bg-gray-100'}`}>
+                      {STATUS_LABELS[order.status] ?? order.status}
+                    </span>
                   </td>
-                  <td className="px-6 py-3 text-xs text-black/40">{order.date}</td>
+                  <td className="px-6 py-3 text-xs text-black/40">{formatDate(order.placed_at ?? order.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -85,16 +102,20 @@ export function AdminDashboard({ products, orders, onViewAllOrders }: AdminDashb
           <h3 className="text-sm font-medium">Productos más reseñados</h3>
         </div>
         <div className="divide-y divide-black/5">
-          {[...products].sort((a, b) => b.reviews - a.reviews).slice(0, 5).map(product => (
+          {[...products].sort((a, b) => b.reviews_count - a.reviews_count).slice(0, 5).map(product => (
             <div key={product.id} className="flex items-center gap-4 px-6 py-3">
-              <img src={product.frontImage} alt={product.name} className="w-10 h-12 object-cover" />
+              {primaryImage(product) ? (
+                <img src={primaryImage(product)} alt={product.name} className="w-10 h-12 object-cover" />
+              ) : (
+                <div className="w-10 h-12 bg-gray-100" />
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm truncate">{product.name}</p>
-                <p className="text-xs text-black/40">{product.gender} · {product.category}</p>
+                <p className="text-xs text-black/40">{product.gender}{product.brand ? ` · ${product.brand}` : ''}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">{formatPrice(product.price)}</p>
-                <p className="text-xs text-black/40">{product.reviews} reseñas</p>
+                <p className="text-sm font-medium">{formatPrice(product.base_price)}</p>
+                <p className="text-xs text-black/40">{product.reviews_count} reseñas</p>
               </div>
             </div>
           ))}

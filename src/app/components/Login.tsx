@@ -5,50 +5,28 @@ import axios from '../../axios';
 import type { User } from '../types';
 
 export function Login() {
-  const { setCurrentUser, navigate } = useApp();
-  const [correo, setCorreo] = useState('');
+  const { login, navigate } = useApp();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
     try {
-      await axios.get('/sanctum/csrf-cookie', {
-        withCredentials: true,
-      });
-
-      await axios.post(
-        '/login',
-        {
-          email: correo,
-          password,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      const { data } = await axios.get('/api/user', {
-        withCredentials: true,
-      });
-
-      const user: User = {
-        id: String(data.id),
-        nombres: data.first_name ?? '',
-        apellidos: data.last_name ?? '',
-        cedula: data.document_number ?? '',
-        telefono: data.phone ?? '',
-        correo: data.email ?? correo,
-        cumpleanos: data.birth_date ?? '',
-        direccion: '',
-        password: '',
-      };
-
-      setCurrentUser(user);
-      navigate('catalog');
-    } catch (err) {
-      setError('Correo o contraseña incorrectos.');
+      const success = await login(email, password);
+      if (success) {
+        navigate('catalog');
+      } else {
+        setError('Correo o contraseña incorrectos.');
+      }
+    } catch {
+      setError('Error al conectar con el servidor.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,9 +43,9 @@ export function Login() {
             <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Correo electrónico</label>
             <input
               type="email"
-              value={correo}
+              value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setCorreo(e.target.value);
+                setEmail(e.target.value);
                 setError('');
               }}
               placeholder="tu@correo.com"
@@ -106,9 +84,10 @@ export function Login() {
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Iniciar sesión
+            {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
           </button>
 
           <div className="text-center text-xs text-black/40 py-2">

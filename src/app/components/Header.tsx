@@ -7,14 +7,11 @@ export function Header() {
   const { navigate, cartCount, wishlist, currentUser, logout, currentPage, darkMode, toggleDarkMode, setCartOpen } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    try {
-      await axios.post('/logout', {}, { withCredentials: true });
-    } finally {
-      logout();
-      navigate('landing');
-    }
+    await logout();
+    navigate('landing');
   };
 
   const navLinks = [
@@ -42,7 +39,7 @@ export function Header() {
             {navLinks.map(link => (
               <button
                 key={link.page}
-                onClick={() => navigate(link.page)}
+                onClick={() => {navigate(link.page); setUserMenuOpen(false)}} // Cierra el menu de usuario al navegar
                 className={`text-sm tracking-widest uppercase transition-all ${
                   darkMode
                     ? currentPage === link.page
@@ -115,29 +112,37 @@ export function Header() {
             </button>
 
             {currentUser ? (
-              <div className="relative group">
-                <button className={`flex items-center gap-1 p-2 rounded-full transition-colors ${
-                  darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
-                }`}>
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className={`flex items-center gap-1 p-2 rounded-full transition-colors ${
+                    darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
+                  }`}
+                >
                   <User size={20} />
-                  <ChevronDown size={14} />
+                  <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-                <div className={`absolute right-0 top-full mt-1 border shadow-lg w-44 py-1 hidden group-hover:block ${
-                  darkMode ? 'bg-black border-white/10' : 'bg-white border-black/10'
-                }`}>
-                  <div className={`px-3 py-2 border-b ${darkMode ? 'border-white/5' : 'border-black/5'}`}>
-                    <p className={`text-xs ${darkMode ? 'text-white/50' : 'text-black/50'}`}>Hola,</p>
-                    <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-black'}`}>{currentUser.nombres}</p>
+                {userMenuOpen && (
+                  <div className={`absolute right-0 top-full mt-1 border shadow-lg w-44 py-1 ${
+                    darkMode ? 'bg-black border-white/10' : 'bg-white border-black/10'
+                  }`}>
+                    <div className={`px-3 py-2 border-b ${darkMode ? 'border-white/5' : 'border-black/5'}`}>
+                      <p className={`text-xs ${darkMode ? 'text-white/50' : 'text-black/50'}`}>Hola,</p>
+                      <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-black'}`}>{currentUser.first_name} {currentUser.last_name}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setUserMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                        darkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-black'
+                      }`}
+                    >
+                      Cerrar sesión
+                    </button>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                      darkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-black'
-                    }`}
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
+                )}
               </div>
             ) : (
               <button

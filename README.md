@@ -2,438 +2,334 @@
 
 ## Estado actual
 
-La base visual y funcional está pensada como prototipo de referencia. Por ahora no se modifica la experiencia existente; este documento define la ruta para convertirla en una plataforma real.
+El proyecto cuenta con un backend Laravel completo (migraciones, modelos, controladores, servicios, requests) y un frontend React + TypeScript + Vite con Tailwind CSS. Ya se realizó la integración entre frontend y backend para el módulo de productos, incluyendo endpoint público para catálogo y endpoints protegidos para administración.
+
+---
+
+## Tabla de Contenidos
+
+1. [Objetivo del proyecto](#objetivo-del-proyecto)
+2. [Arquitectura](#arquitectura)
+3. [Base de datos](#base-de-datos)
+4. [Backend](#backend)
+5. [Frontend](#frontend)
+6. [Autenticación](#autenticación)
+7. [Guía de instalación y despliegue](#guía-de-instalación-y-despliegue)
+8. [Bitácora de cambios](#bitácora-de-cambios)
+
+---
 
 ## Objetivo del proyecto
 
 Convertir este prototipo en una plataforma ecommerce completa para ropa, con frontend, backend, base de datos, autenticación, panel de administración y flujo real de compra.
 
-## Arquitectura objetivo
+---
+
+## Arquitectura
 
 ### Frontend
-
 - React + TypeScript + Vite
 - Tailwind CSS para la interfaz
-- Componentes reutilizables para catálogo, detalle, carrito, checkout, cuenta y admin
-- Consumo de API para productos, usuarios, pedidos y autenticación
+- Lucide React para iconos
+- Consumo de API REST mediante Axios con Sanctum (SPA)
 
 ### Backend
+- Laravel 11 (API REST monolítica modular)
+- Autenticación con Laravel Sanctum (SPA + tokens)
+- Eloquent ORM con migraciones y modelos
+- Validación de datos con Form Requests
+- Servicios (ProductService) para lógica de negocio
 
-- API REST como primera opción
-- Autenticación con sesiones o JWT
-- Servicios para catálogo, usuarios, pedidos, inventario y administración
-- Validación de datos en servidor
-
-### Estructura del backend
-
-Arquitectura de Software seleccionada: La idea es trabajar con un backend monolítico modular, organizado por capas.
-
-
-### Capas por módulo
-
-Cada módulo puede organizarse internamente así:
-
-- `presentation/`: controladores, rutas y validaciones de entrada.
-- `application/`: casos de uso y lógica de aplicación.
-- `domain/`: entidades, reglas de negocio e invariantes.
-- `persistence/`: repositorios, modelos ORM y acceso a base de datos.
-
-# Base de datos Oxmos
-
-Estado actual: la base de datos ya cuenta con las migraciones principales, modelos Eloquent, relaciones, indices y constraints necesarios para empezar a construir las consultas y endpoints que consumira el frontend.
-
-## Tablas de negocio
-
-- `roles`
-- `users`
-- `addresses`
-- `categories`
-- `collections`
-- `collection_product`
-- `products`
-- `product_variants`
-- `product_images`
-- `carts`
-- `cart_items`
-- `orders`
-- `order_items`
-- `payments`
-- `wishlists`
-- `wishlist_items`
-- `reviews`
-- `inventory_logs`
-
-## Tablas internas de Laravel
-
-Estas tablas existen, pero las maneja Laravel o Sanctum directamente:
-
-- `sessions`
-- `password_reset_tokens`
-- `cache`
-- `cache_locks`
-- `jobs`
-- `job_batches`
-- `failed_jobs`
-- `personal_access_tokens`
-
-No se crearon modelos manuales para esas tablas porque no forman parte directa del dominio del ecommerce.
-
-## Modelos creados
-
-Los modelos Eloquent de negocio estan en `backend/app/Models`:
-
-- `Address`
-- `Cart`
-- `CartItem`
-- `Category`
-- `Collection`
-- `InventoryLog`
-- `Order`
-- `OrderItem`
-- `Payment`
-- `Product`
-- `ProductImage`
-- `ProductVariant`
-- `Review`
-- `Role`
-- `User`
-- `Wishlist`
-- `WishlistItem`
-
-## Relaciones principales
-
-- Un `Role` tiene muchos `User`.
-- Un `User` pertenece a un `Role`.
-- Un `User` tiene muchas `Address`, `Order`, `Wishlist` y `Review`.
-- Una `Category` tiene muchos `Product`.
-- Una `Category` puede tener categoria padre e hijas por `parent_id`.
-- Un `Product` pertenece a una `Category`.
-- Un `Product` tiene muchas `ProductVariant`, `ProductImage`, `OrderItem` y `Review`.
-- Un `Product` pertenece a muchas `Collection` por la tabla pivote `collection_product`.
-- Una `Collection` tiene muchos `Product` por `collection_product`.
-- Un `Cart` pertenece a un `User` y tiene muchos `CartItem`.
-- Un `CartItem` pertenece a un `Cart`, `Product` y `ProductVariant`.
-- Un `Order` pertenece opcionalmente a un `User` y una `Address`.
-- Un `Order` tiene muchos `OrderItem`, `Payment` y `Review`.
-- Un `OrderItem` pertenece a un `Order`, `Product` y opcionalmente a un `ProductVariant`.
-- Un `Payment` pertenece a un `Order`.
-- Una `Wishlist` pertenece a un `User` y tiene muchos `WishlistItem`.
-- Un `WishlistItem` pertenece a una `Wishlist` y a un `Product`.
-- Un `Review` pertenece a un `Product`, `User` y opcionalmente a un `Order`.
-- Un `ProductVariant` tiene muchos `CartItem`, `OrderItem`, `ProductImage` e `InventoryLog`.
-- Un `InventoryLog` pertenece a un `ProductVariant` y opcionalmente a un `User`.
-
-## Constraints e indices
-
-Ya estan implementados los constraints recomendados:
-
-- `users.email` unico.
-- `users.document_number` unico.
-- `categories.slug` unico.
-- `collections.slug` unico.
-- `products.slug` unico.
-- `product_variants.sku` unico.
-- `orders.order_number` unico.
-- Foreign keys en columnas relacionales.
-- Unico compuesto en `collection_product(collection_id, product_id)`.
-- Unico compuesto en `wishlist_items(wishlist_id, product_id)`.
-- Unico compuesto en `cart_items(cart_id, product_variant_id)`.
-
-Tambien estan cubiertos indices para lecturas comunes:
-
-- `products.category_id` por foreign key.
-- `products.is_active` como indice explicito.
-- `product_variants.product_id` por foreign key.
-- `orders.user_id` por foreign key.
-- `orders.status` como indice explicito.
-- `order_items.order_id` por foreign key.
-- `inventory_logs.product_variant_id` por foreign key.
-
-## Separacion entre tablas principales y tablas de detalle
-
-Algunas entidades se separan entre tabla general y tabla de filas para mantener una estructura limpia:
-
-- `carts` / `cart_items`
-- `orders` / `order_items`
-- `wishlists` / `wishlist_items`
-
-La tabla general guarda la informacion global. La tabla de items guarda cada producto asociado.
-
-Ejemplo: `orders` funciona como la factura y `order_items` como los renglones de esa factura.
-
-Si un cliente compra:
-
-- Camiseta negra talla M, cantidad 3.
-- Jean azul talla 32, cantidad 1.
-
-Entonces `orders` guarda el encabezado:
-
-```txt
-id: 501
-user_id: 10
-order_number: OX-2026-000501
-customer_name: Juan Perez
-customer_email: juan@email.com
-status: pending
-subtotal: 210000
-total: 210000
+### Estructura del proyecto
+```
+oxmos-Project/
+├── backend/                  # Laravel API
+│   ├── app/
+│   │   ├── Http/
+│   │   │   ├── Controllers/  # Controladores
+│   │   │   └── Requests/     # Form Requests (validación)
+│   │   ├── Models/           # Modelos Eloquent
+│   │   └── Services/         # Lógica de negocio
+│   ├── database/
+│   │   └── migrations/       # Migraciones de BD
+│   └── routes/
+│       └── api.php           # Rutas de la API
+├── src/                      # Frontend React
+│   └── app/
+│       ├── components/       # Componentes UI
+│       │   └── admin/        # Componentes del panel admin
+│       ├── context/          # AppContext (estado global)
+│       ├── data/             # Helpers y constantes
+│       └── types/            # Tipos TypeScript
+└── package.json
 ```
 
-Y `order_items` guarda las lineas:
+---
 
-```txt
-order_id: 501
-product_variant_id: 33
-product_name_snapshot: Camiseta negra
-variant_description_snapshot: Black / M
-quantity: 3
-unit_price: 60000
-subtotal: 180000
-```
+## Base de datos
 
-```txt
-order_id: 501
-product_variant_id: 41
-product_name_snapshot: Jean azul
-variant_description_snapshot: Blue / 32
-quantity: 1
-unit_price: 30000
-subtotal: 30000
-```
+### Tablas de negocio
 
-## Siguiente paso tecnico
+| Tabla | Descripción |
+|---|---|
+| `roles` | Roles de usuario (admin, customer) |
+| `users` | Usuarios del sistema |
+| `addresses` | Direcciones de envío/facturación |
+| `categories` | Categorías de productos (con jerarquía parent_id) |
+| `collections` | Colecciones comerciales (Nuevo, Tendencia, Oferta) |
+| `collection_product` | Pivote many-to-many productos ↔ colecciones |
+| `products` | Productos del catálogo |
+| `product_variants` | Variantes (talla + color + stock + precio) |
+| `product_images` | Imágenes de productos y variantes |
+| `carts` | Carritos de compra activos |
+| `cart_items` | Items dentro del carrito |
+| `orders` | Pedidos realizados |
+| `order_items` | Detalle de cada pedido |
+| `payments` | Pagos asociados a pedidos |
+| `wishlists` | Listas de deseos |
+| `wishlist_items` | Items en lista de deseos |
+| `reviews` | Reseñas de productos |
+| `inventory_logs` | Historial de movimientos de inventario |
 
-La base ya esta lista para empezar a crear consultas y endpoints. El siguiente trabajo recomendado es construir controladores/API resources para:
+### Tablas internas de Laravel/Sanctum
+`personal_access_tokens`, `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`
 
-- Catalogo publico: categorias, colecciones, productos, variantes e imagenes.
-- Autenticacion y perfil: usuario actual, direcciones y datos de cuenta.
-- Carrito: crear carrito activo, agregar item, actualizar cantidad, eliminar item.
-- Wishlist: guardar y quitar productos.
-- Checkout: convertir carrito en orden, congelar snapshots y registrar pago.
-- Admin: CRUD de productos, variantes, imagenes, inventario, pedidos y estados.
+### Modelos Eloquent creados
+Todos en `backend/app/Models/`: `Product`, `ProductVariant`, `ProductImage`, `Category`, `Collection`, `Cart`, `CartItem`, `Order`, `OrderItem`, `Payment`, `Wishlist`, `WishlistItem`, `Review`, `Address`, `Role`, `User`, `InventoryLog`
 
-Las rutas API actuales aun estan en fase inicial: existe `/api/user` protegido por Sanctum, pero faltan los endpoints funcionales para que el frontend consuma catalogo, carrito, wishlist, checkout y administracion.
+### Relaciones principales
+- `Product` → `Category` (belongsTo), `ProductVariant` (hasMany), `ProductImage` (hasMany), `Collection` (belongsToMany), `Review` (hasMany), `OrderItem` (hasMany)
+- `ProductVariant` → `Product` (belongsTo), `ProductImage` (hasMany), `CartItem` (hasMany), `OrderItem` (hasMany), `InventoryLog` (hasMany)
+- `ProductImage` → `Product` (belongsTo), `ProductVariant` (belongsTo, nullable)
+- `Order` → `OrderItem` (hasMany), `Payment` (hasMany), `User` (belongsTo), `Address` (belongsTo)
+- `Cart` → `CartItem` (hasMany), `User` (belongsTo)
 
-### Infraestructura
+### Constraints e índices
+- Unique en: `users.email`, `users.document_number`, `categories.slug`, `collections.slug`, `products.slug`, `product_variants.sku`, `orders.order_number`
+- Unique compuesto en: `collection_product(collection_id, product_id)`, `wishlist_items(wishlist_id, product_id)`, `cart_items(cart_id, product_variant_id)`
+- Índices explícitos en: `products.category_id`, `products.is_active`, `orders.user_id`, `orders.status`, `inventory_logs.product_variant_id`
 
-- Almacenamiento de imágenes
-- Variables de entorno para credenciales y servicios externos
-- Registro de errores y auditoría básica
-- Despliegue separado para frontend y backend
+---
 
-### Instalar y desplegar Laravel (guía rápida)
+## Backend
 
-Se mantiene el frontend en `src/` y se crea el backend en `backend/`.
+### Endpoints API
 
-1) Se creó el proyecto Laravel (local)
+#### Públicos (sin autenticación)
+| Método | Ruta | Controlador | Descripción |
+|---|---|---|---|
+| GET | `/api/products` | `ProductController@listForCatalog` | Lista productos activos para catálogo/landing |
 
-```bash
-cd d:\\MH-Software-House\\oxmos-Project
-composer create-project laravel/laravel backend
-cd backend
-php artisan serve
-```
+#### Protegidos (auth:sanctum)
+| Método | Ruta | Controlador | Descripción |
+|---|---|---|---|
+| GET | `/api/user` | Closure | Obtener usuario autenticado |
+| GET | `/api/cart` | `CartController@index` | Obtener carrito actual |
+| POST | `/api/cart/items` | `CartController@addItem` | Agregar item al carrito |
+| DELETE | `/api/cart/items/{item}` | `CartController@removeItem` | Eliminar item del carrito |
+| PUT | `/api/cart/items/{item}` | `CartController@updateQuantity` | Actualizar cantidad |
+| DELETE | `/api/cart` | `CartController@clear` | Vaciar carrito |
+| GET | `/api/wishlist` | `WishlistController@index` | Obtener lista de deseos |
+| POST | `/api/wishlist` | `WishlistController@store` | Agregar a wishlist |
+| DELETE | `/api/wishlist/{product}` | `WishlistController@destroy` | Quitar de wishlist |
+| POST | `/api/orders` | `OrderController@store` | Crear pedido |
+| **GET** | **`/api/admin/products`** | **`ProductController@index`** | **Listar todos los productos (admin)** |
+| **GET** | **`/api/admin/products/{product}`** | **`ProductController@show`** | **Detalle de producto (admin)** |
+| **POST** | **`/api/admin/products`** | **`ProductController@store`** | **Crear producto** |
+| **PUT** | **`/api/admin/products/{product}`** | **`ProductController@update`** | **Actualizar producto** |
+| **DELETE** | **`/api/admin/products/{product}`** | **`ProductController@destroy`** | **Eliminar producto** |
+| PUT | `/api/admin/orders/{order}/status` | `OrderController@updateStatus` | Actualizar estado de pedido |
+| DELETE | `/api/admin/orders/{order}` | `OrderController@destroy` | Eliminar pedido |
 
-2) Configuración inicial en `backend/.env`
-- `APP_URL` → URL local o URL de producción (ej. `https://api.tudominio.com`).
-- `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` → datos de la base de datos creada en el hosting.
-- Ejecutar `php artisan key:generate`.
+### Controlador de Productos (`ProductController`)
+- **`index()`** — Lista paginada (20) con relaciones: category, collections, variants, images. Protegido con `auth:sanctum`.
+- **`listForCatalog()`** — Lista paginada (50) solo productos activos y publicados. **Público** (sin autenticación). Filtra por `is_active = true` y `published_at <= now()`.
+- **`show()`** — Detalle completo con variants, images, category, collections, reviews. Protegido.
+- **`store()`** — Crea producto con variantes e imágenes en transacción. Asigna categoría por defecto si no se especifica. Genera slug único automáticamente.
+- **`update()`** — Actualiza producto y sincroniza variantes/imágenes. Regenera slug si cambia el nombre.
+- **`destroy()`** — Elimina producto, sus variantes e imágenes (cascade).
 
-3) Habilitar CORS para que React consuma la API: editar `backend/config/cors.php` o añadir el origen del frontend en `paths` / `allowed_origins`.
+### Servicio de Productos (`ProductService`)
+Ubicado en `backend/app/Services/ProductService.php`. Encapsula la lógica de:
+- `createProduct()` — Crea producto y opcionalmente variantes e imágenes
+- `updateProduct()` — Actualiza producto y sincroniza relaciones
+- `deleteProduct()` — Elimina producto con sus relaciones
+- `createVariants()` / `syncVariants()` — Gestión de variantes
+- `createImages()` / `syncImages()` — Gestión de imágenes
+- `generateSku()` — Genera SKU único automáticamente
 
-4) Migraciones y seeders
+### Requests de validación
+- `ProductStoreRequest` — Validación completa para crear: nombre requerido, precio base requerido, género requerido (Mujer/Hombre/Unisex), variantes con size, color_name, color_hex requeridos, imágenes como URLs.
+- `ProductUpdateRequest` — Mismos campos pero opcionales (`sometimes`). Incluye validación de `variants.*.sku`.
 
-```bash
-php artisan migrate --seed
-```
+---
 
-5) Build del frontend y despliegue (shared hosting)
+## Frontend
 
-- En el equipo de desarrollo hay que compilar el frontend:
+### Estado global (`AppContext`)
+Maneja el estado con `useReducer` pattern via `useState` + `useCallback`. Los productos se cargan desde el endpoint público `/api/products` al iniciar la aplicación, sin requerir autenticación. El carrito, wishlist y datos de usuario solo se cargan si hay sesión activa.
 
-```bash
-cd d:\\MH-Software-House\\oxmos-Project
-npm run build
-```
+### Helpers de productos (`productHelpers.ts`)
+Funciones auxiliares compartidas que traducen la estructura del backend a lo que necesita la UI:
+- `getProductPrimaryImage()` — Obtiene imagen principal
+- `getProductImages()` — Lista todas las URLs ordenadas por posición
+- `getProductColors()` — Colores únicos desde variantes
+- `getProductSizes()` — Tallas únicas desde variantes
+- `getProductStockBySize()` — Stock agregado por talla
+- `getProductDiscount()` — Porcentaje de descuento
+- `getProductCategoryLabel()` — Etiqueta de colección (Nuevo/Tendencia/Oferta)
+- `getMinVariantPrice()` — Precio mínimo entre variantes
 
-- Subir el contenido de `dist/` (o `build/` según tu configuración de Vite) al `public_html` del dominio principal.
+### Componentes principales
 
-6) Despliegue de Laravel en hosting compartido
+| Componente | Descripción |
+|---|---|
+| `LandingPage` | Hero slider, productos destacados (`is_featured`), colecciones, nuevos ingresos |
+| `Catalog` | Catálogo con filtros (género, tipo, color, talla, colección), ordenamiento y carga progresiva |
+| `ProductCard` | Tarjeta de producto con imagen, badges, colores, precio y quick add |
+| `ProductDetail` | Detalle con galería de imágenes, selector de talla/color, cantidad, add to cart |
+| `Cart` | Drawer lateral con items del carrito |
+| `AdminPanel` | Panel de administración con dashboard, gestión de productos y pedidos |
+| `AdminProducts` | Tabla de productos con búsqueda y modal de creación/edición |
+| `AdminDashboard` | Tarjetas de estadísticas, pedidos recientes y top productos |
 
-- Subir la carpeta `backend` al hosting (por ejemplo en `your_account/oxmos-backend/`).
-- Apuntar el subdominio `api.tudominio.com` a la carpeta `oxmos-backend/public` como document root (Panel de control → Dominios/subdominios).
-- Configurar `.env` en el hosting con las credenciales de producción.
-- Ajustar permisos: `storage/` y `bootstrap/cache` deben ser escribibles.
-- Ejecutar migraciones desde consola del hosting o mediante un script: `php artisan migrate`.
+### Tipos TypeScript (`types/index.ts`)
+Alineados con el backend. Los principales son:
+- `Product` — `id`, `category_id`, `name`, `slug`, `gender`, `base_price`, `original_price`, `is_featured`, `is_active`, `images[]`, `variants[]`, `collections[]`, `category`, `raiting_average`, `reviews_count`
+- `ProductVariant` — `sku`, `size`, `color_name`, `color_hex`, `price`, `stock`, `is_active`
+- `ProductImage` — `image_url`, `alt_text`, `position`, `is_primary`, `product_variant_id?`
+- `CartItem`, `Order`, `OrderItem`, `Review`, `Address`, etc.
 
-7) Post-despliegue
-
-- En `backend/.env` en producción: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` correcto.
-- Configurar backups y copias de la base de datos desde el panel del hosting (Hostinger ofrece backups diarios en tu plan).
-- Forzar HTTPS y configurar el certificado (Hostinger ofrece SSL gratuito y CDN si se activa).
-
-Notas y precauciones:
-- En hosting compartido no es recomendable depender de procesos largos (workers, queues). Si se necesitan colas, considerar servicios externos (Redis/Beanstalk) o soluciones gestionadas.
-- Mantener separadas las fuentes: no mezclar la app React `src/` con la app Laravel `backend/`.
-- Para llamadas desde el frontend, usar la URL completa del API (ej. `https://api.tudominio.com/api/products`).
-
-
-## Orden de implementación
-
-### Fase 1: definición funcional
-
-- Cerrar el modelo de datos
-- Definir roles y permisos
-- Definir flujo de compra y estados de pedido
-- Definir reglas de inventario y tallas
-
-### Fase 2: backend base
-
-- Crear la API
-- Conectar la base de datos
-- Implementar autenticación y autorización
-- Construir CRUD de productos, usuarios y pedidos
-
-### Fase 3: integración del frontend
-
-- Reemplazar datos simulados por llamadas a API
-- Conectar login, registro, catálogo, carrito y checkout
-- Persistir pedido real
-- Conectar panel administrativo
-
-### Fase 4: endurecimiento de producto
-
-- Validaciones completas
-- Manejo de errores
-- Subida y gestión de imágenes
-- Pruebas básicas
-- Preparación para despliegue
-
-### Fase 5: salida a producción
-
-- Monitoreo
-- Backups
-- Seguridad básica
-- Ajustes finales de experiencia de usuario
-
-## Revisión y cambios del frontend
-
-Este apartado servirá como bitácora del prototipo. La idea es documentar qué cambia en la interfaz antes de implementar el backend, para no perder el diseño base.
-
-### Lo que ya existe
-
-- Landing page con hero, destacados y secciones editoriales
-- Catálogo con filtros, ordenamiento y paginación
-- Detalle de producto con tallas, colores y carrito
-- Carrito lateral
-- Checkout en dos pasos
-- Wishlist
-- Panel de administrador de demo
-
-### Cambios pendientes de frontend
-
-- Sustituir estado local por consumo de API
-- Hacer persistentes usuario, carrito y pedidos
-- Conectar imágenes y stock desde backend
-- Reemplazar login de demo por autenticación real
-- Reemplazar el panel de administrador simulado por uno conectado a datos reales
-- Agregar estados de carga, error y vacíos
-
-### Reglas para cambiar el frontend
-
-- No romper el diseño base mientras se migra a producción
-- Mantener componentes reutilizables
-- Priorizar cambios funcionales antes que cambios visuales
-- Registrar en esta sección cualquier cambio relevante de UX o navegación
-
-### Bitácora de revisiones
-
-- Pendiente: definición de roles y permisos
-- Pendiente: modelo final de pedidos y detalle de pedido
-- Pendiente: estrategia de autenticación
-- Pendiente: estrategia de persistencia del carrito
-- Pendiente: lineamientos finales del panel admin
-
-
-## Requisitos
-
-- Node.js 18 o superior
-- `npm`
-
-## Instalar dependencias
-
-
-```bash
-npm install
-```
-
-Esto instala todo lo necesario para correr la app: React, React DOM, Vite, Tailwind y Lucide.
-
-## Correr la app
-
-```bash
-npm run dev
-```
-
-## Build de produccion
-
-
-```bash
-npm run build
-```
-
-## Nota
-
-No hace falta instalar dependencias manualmente una por una; todo sale de `package.json`.
-
-
+---
 
 ## Autenticación
-Para la autenticación se utiliza un paquete oficial de Laravel conocido como Laravel Sanctum, el cual sirve para manejar la autenticación de usuarios en aplicaciones modernas, especialmente cuando se tien un frontend separado como en el caso de este proyecto.
 
-- El paquete Sanctum utiliza Tokens personales los cuales permite que cada usuario genere tokens para acceder a la API, útilies en apps móviles o clientes externos.
-- Utiliza Autenticación de SPA (Single Page Applications), lo cual funciona muy bien con frontends como React, porque gestiona sesiones seguras usando cookies y CSRF protection.
-- Ligero y simple: Es más fácil de configurar que Laravel Passport (que usa OAuth2)
+Se utiliza Laravel Sanctum para autenticación SPA.
 
-El flujo correcto es:
+### Flujo
+1. El frontend solicita cookie CSRF: `GET /sanctum/csrf-cookie`
+2. Envía credenciales: `POST /api/login` o `/api/register`
+3. Obtiene usuario autenticado: `GET /api/user`
+4. Sanctum maneja sesiones via cookies (con `withCredentials: true` en Axios)
 
-```
-await axios.get('/sanctum/csrf-cookie')
-await axios.post('/register', data)
-await axios.get('api/user')
-```
-Primero se pide /sanctum/csrf-cookie para que laravel entregue la cookie CSRF. Luego se hace el POST/register. Después se consulta /api/user para obtener el usuario autenticado.
-
-
-## Nota
-```
+### Configuración clave
+```env
 SESSION_DOMAIN=
+SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:8000,...
 ```
-Eso permite que Laravel use el dominio actual correctamente en local.
 
-Los deminios permitidos por Sanctum están en esta parte
-```
-SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:8000,127.0.0.1:5173,127.0.0.1:8000,localhost,127.0.0.1
-```
-Esto le dice a sanctum: "estas URLs pertenecen al frontend confiable". Sin eso, Laravel puede tratar la petición como externa y no asociarla bien con la sesión.
-
-Cambiar los CORS al momento de subir a producción. 
-
-### AXIOS
-Ya está configurado correctamente, al momento de subir a producción se debe cambiar .baseURL
-
-```
+### Axios (`src/axios.ts`)
+```ts
 axios.defaults.baseURL = 'http://localhost:8000';
 axios.defaults.withCredentials = true;
 axios.defaults.withXSRFToken = true;
 ```
-Esta configuración de AXIOS es clave porque permite enviar cookies y el token CSRF en las peticiones.
 
-## Nota
-El header ahora puede saber si hay sesión. 
-Después del registro, el frontend consulta:
-```
-const { data } = await axios.get('/api/user')
+---
+
+## Guía de instalación y despliegue
+
+### Requisitos
+- Node.js 18+
+- PHP 8.2+
+- Composer
+- MySQL/MariaDB
+
+### Instalación local
+
+```bash
+# Clonar repositorio
+git clone <repo-url>
+cd oxmos-Project
+
+# Instalar dependencias del frontend
+npm install
+
+# Instalar dependencias del backend
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+
+# Iniciar servidores
+php artisan serve  # Backend en localhost:8000
+npm run dev        # Frontend en localhost:5173
 ```
 
-Ese usuario se guarda en currentUser, entonces el header cambia de "ingresar" a mostrar el usuario logueado, además en el contexto se agrega una consulta inicial a /api/user para que si se refresca la página y la cookie sigue viva, el frontend vuelva a cargar el usuario automáticamente.
+### Build de producción
+
+```bash
+npm run build
+```
+
+### Despliegue
+- Frontend: compilar con `npm run build` y subir `dist/` al hosting
+- Backend: subir `backend/` al hosting, configurar `.env`, ajustar permisos en `storage/` y `bootstrap/cache`
+- Configurar CORS para el dominio de producción
+- Configurar Sanctum para el dominio del frontend
+
+---
+
+## Bitácora de cambios
+
+### Integración Backend-Frontend de Productos
+
+#### Backend
+- ✅ Creadas migraciones de productos, variantes, imágenes, categorías y colecciones
+- ✅ Creados modelos Eloquent con relaciones y casts
+- ✅ Creado `ProductController` con CRUD completo
+- ✅ Creado `ProductService` con lógica de creación/actualización/eliminación
+- ✅ Creados `ProductStoreRequest` y `ProductUpdateRequest` con validaciones
+- ✅ Agregada ruta `GET /admin/products/{product}` para `show()` (faltaba)
+- ✅ `product_variant_id` en `product_images` cambiado a nullable
+- ✅ Agregado `collections` al eager loading de `index()`
+- ✅ Creado endpoint público `GET /api/products` (`listForCatalog()`) para catálogo sin autenticación
+- ✅ `auth:sanctum` excluido del endpoint público con `->except(['listForCatalog'])`
+- ✅ Endpoint público filtra solo productos activos y publicados
+
+#### Frontend
+- ✅ Agregado `productHelpers.ts` con funciones para traducir estructura backend → UI
+- ✅ `AppContext` corregido para parsear respuestas del backend (`data.data`)
+- ✅ `AppContext.fetchProducts()` ahora usa endpoint público y se ejecuta siempre (sin auth)
+- ✅ `ProductCard.tsx` adaptado a `Product` real (images[], variants[], base_price, etc.)
+- ✅ `ProductDetail.tsx` adaptado a `Product` real con galería de imágenes, tallas desde variantes
+- ✅ `Catalog.tsx` adaptado: filtros dinámicos por colecciones, tipos reales
+- ✅ `LandingPage.tsx` adaptado: featured usa `is_featured`, precios desde helpers
+- ✅ `AdminPanel.tsx` corregido: envía JSON en vez de FormData con JSON.stringify
+- ✅ `AppContext` corregido: `fetchProducts()` siempre se ejecuta al cargar la app
+- ⏳ Pendiente: `Cart.tsx` y `Checkout.tsx` aún usan formato mock (requieren reescritura completa del flujo carrito/checkout)
+
+#### Problemas detectados y solucionados
+| Problema | Solución |
+|---|---|
+| Productos no se cargaban para visitantes | Endpoint público separado + fetchProducts() fuera del bloque auth |
+| ProductService en ubicación incorrecta | Movido a `app/Services/ProductService.php` |
+| Faltaba ruta show() | Agregada en routes/api.php |
+| product_variant_id NOT NULL sin asignarse | Cambiado a nullable en migración |
+| Archivo ProductUpdateRequest en minúscula | Renombrado a PascalCase |
+| Faltaba variants.*.sku en UpdateRequest | Agregado |
+| Frontend esperaba data.product en vez de data.data | Corregido en AppContext |
+| AdminPanel enviaba JSON string en FormData | Cambiado a envío JSON directo |
+
+---
+
+## Notas técnicas importantes
+
+### CORS
+Al subir a producción, configurar CORS en `backend/config/cors.php` y `SANCTUM_STATEFUL_DOMAINS` en `.env`.
+
+### SESSION_DOMAIN
+```env
+SESSION_DOMAIN=
+```
+Esto permite que Laravel use el dominio actual correctamente en local.
+
+### AXIOS en producción
+Cambiar `axios.defaults.baseURL` en `src/axios.ts` a la URL del backend en producción.
+
+### Imágenes
+Actualmente las imágenes se manejan como URLs externas. Para producción se recomienda implementar subida de archivos con Storage de Laravel.
+
+### Paginación
+El endpoint público usa `paginate(50)` y el admin `paginate(20)`. Si se necesitan más productos, implementar carga de páginas adicionales desde el frontend.

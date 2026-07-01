@@ -1,13 +1,13 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SlidersHorizontal, ChevronDown, ChevronUp, X, ArrowUp } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ProductCard } from './ProductCard';
-import { GARMENT_TYPES, LENGTHS, SIZES, GENDERS, COLOR_OPTIONS } from '../data';
-import type { ProductCategory, Gender } from '../types';
-import type { ChangeEvent } from 'react';
+import { GENDERS, COLOR_OPTIONS } from '../data';
+import type { Gender } from '../types';
+import { getProductColors, getProductSizes, getProductCategoryLabel } from './productHelpers';
 
 type SortOption = 'recomendado' | 'precio-asc' | 'precio-desc' | 'popular';
-type SectionFilter = 'TODOS' | ProductCategory;
+type SectionFilter = 'TODOS' | 'NUEVO' | 'TENDENCIA' | 'OFERTA';
 
 const SORT_LABELS: Record<SortOption, string> = {
   recomendado: 'Recomendados',
@@ -25,13 +25,12 @@ export function Catalog() {
   const [sort, setSort] = useState<SortOption>('recomendado');
   const [selectedGenders, setSelectedGenders] = useState<Gender[]>(() => (catalogGender ? [catalogGender] : []));
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedLengths, setSelectedLengths] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({
-    genero: true, tipo: true, color: true, longitud: false, talla: false,
+    genero: true, tipo: true, color: true, talla: false,
   });
 
   useEffect(() => {
@@ -50,39 +49,59 @@ export function Catalog() {
   const filtered = useMemo(() => {
     let list = [...products];
 
-    if (section !== 'TODOS') list = list.filter(p => p.category === section);
-    if (selectedGenders.length) list = list.filter(p => selectedGenders.includes(p.gender));
-    if (selectedTypes.length) list = list.filter(p => selectedTypes.includes(p.type));
-    if (selectedLengths.length) list = list.filter(p => selectedLengths.includes(p.length));
-    if (selectedColors.length)
-      list = list.filter(p => p.colors.some(c => selectedColors.includes(c)));
-    if (selectedSizes.length)
-      list = list.filter(p => selectedSizes.some(s => (p.stock[s] ?? 0) > 0));
+    // Filtrar por colección (NUEVO, TENDENCIA, OFERTA)
+    if (section !== 'TODOS') {
+      list = list.filter(p => {
+        const label = getProductCategoryLabel(p);
+        return label?.toLowerCase() === section.toLowerCase();
+      });
+    }
+
+    if (selectedGenders.length) list = list.filter(p => selectedGenders.includes(p.gender as Gender));
+    if (selectedTypes.length) list = list.filter(p => selectedTypes.includes(p.type ?? ''));
+
+    if (selectedColors.length) {
+      list = list.filter(p => {
+        const colors = getProductColors(p);
+        return colors.some(c => selectedColors.includes(c.hex));
+      });
+    }
+
+    if (selectedSizes.length) {
+      list = list.filter(p => {
+        const sizes = getProductSizes(p);
+        return sizes.some(s => selectedSizes.includes(s));
+      });
+    }
 
     switch (sort) {
-      case 'precio-asc': list.sort((a, b) => a.price - b.price); break;
-      case 'precio-desc': list.sort((a, b) => b.price - a.price); break;
-      case 'popular': list.sort((a, b) => b.reviews - a.reviews); break;
-      default: list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)); break;
+      case 'precio-asc': list.sort((a, b) => a.base_price - b.base_price); break;
+      case 'precio-desc': list.sort((a, b) => b.base_price - a.base_price); break;
+      case 'popular': list.sort((a, b) => (b.reviews_count ?? 0) - (a.reviews_count ?? 0)); break;
+      default: list.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0)); break;
     }
 
     return list;
-  }, [products, section, selectedGenders, selectedTypes, selectedLengths, selectedColors, selectedSizes, sort]);
+  }, [products, section, selectedGenders, selectedTypes, selectedColors, selectedSizes, sort]);
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
   const activeFilterCount =
-    selectedGenders.length + selectedTypes.length + selectedLengths.length +
-    selectedColors.length + selectedSizes.length;
+    selectedGenders.length + selectedTypes.length + selectedColors.length + selectedSizes.length;
 
   const clearAll = () => {
     setSelectedGenders([]);
     setSelectedTypes([]);
-    setSelectedLengths([]);
     setSelectedColors([]);
     setSelectedSizes([]);
   };
+
+  // Obtener tipos únicos de productos desde los datos reales
+  const availableTypes = useMemo(() => {
+    const types = new Set(products.map(p => p.type).filter(Boolean));
+    return Array.from(types) as string[];
+  }, [products]);
 
   const FilterSection = ({ name, label, children }: { name: string; label: string; children: React.ReactNode }) => (
     <div className={`border-b py-4 ${darkMode ? 'border-white/10' : 'border-black/10'}`}>
@@ -123,9 +142,7 @@ export function Catalog() {
             <span className={`text-xs ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{filtered.length} productos</span>
             <select
               value={sort}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                  setSort(e.target.value as SortOption)
-                }
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSort(e.target.value as SortOption)}
               className={`text-xs border px-2 py-1.5 outline-none cursor-pointer transition-colors ${
                 darkMode ? 'border-white/20 bg-black text-white' : 'border-black/20 bg-white text-black'
               }`}
@@ -170,21 +187,23 @@ export function Catalog() {
                 </div>
               </FilterSection>
 
-              <FilterSection name="tipo" label="Tipo de prenda">
-                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                  {GARMENT_TYPES.map(t => (
-                    <label key={t} className={`flex items-center gap-2 cursor-pointer ${darkMode ? 'text-white' : 'text-black'}`}>
-                      <input
-                        type="checkbox"
-                        checked={selectedTypes.includes(t)}
-                        onChange={() => toggleItem(selectedTypes, t, setSelectedTypes)}
-                        className={`w-3.5 h-3.5 ${darkMode ? 'accent-white' : 'accent-black'}`}
-                      />
-                      <span className="text-sm">{t}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+              {availableTypes.length > 0 && (
+                <FilterSection name="tipo" label="Tipo de prenda">
+                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                    {availableTypes.map(t => (
+                      <label key={t} className={`flex items-center gap-2 cursor-pointer ${darkMode ? 'text-white' : 'text-black'}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTypes.includes(t)}
+                          onChange={() => toggleItem(selectedTypes, t, setSelectedTypes)}
+                          className={`w-3.5 h-3.5 ${darkMode ? 'accent-white' : 'accent-black'}`}
+                        />
+                        <span className="text-sm">{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FilterSection>
+              )}
 
               <FilterSection name="color" label="Color">
                 <div className="flex flex-wrap gap-2">
@@ -209,25 +228,9 @@ export function Catalog() {
                 </div>
               </FilterSection>
 
-              <FilterSection name="longitud" label="Longitud">
-                <div className="flex flex-col gap-2">
-                  {LENGTHS.map(l => (
-                    <label key={l} className={`flex items-center gap-2 cursor-pointer ${darkMode ? 'text-white' : 'text-black'}`}>
-                      <input
-                        type="checkbox"
-                        checked={selectedLengths.includes(l)}
-                        onChange={() => toggleItem(selectedLengths, l, setSelectedLengths)}
-                        className={`w-3.5 h-3.5 ${darkMode ? 'accent-white' : 'accent-black'}`}
-                      />
-                      <span className="text-sm">{l}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
-
               <FilterSection name="talla" label="Talla">
                 <div className="flex flex-wrap gap-2">
-                  {SIZES.map(s => (
+                  {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => (
                     <button
                       key={s}
                       onClick={() => toggleItem(selectedSizes, s, setSelectedSizes)}

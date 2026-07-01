@@ -1,20 +1,32 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import axios from '../../axios';
+import type { User } from '../types';
 
 export function Login() {
   const { login, navigate } = useApp();
-  const [correo, setCorreo] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(correo, password)) {
-      navigate('catalog');
-    } else {
-      setError('Correo o contraseña incorrectos.');
+    setError('');
+    setIsLoading(true);
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('catalog');
+      } else {
+        setError('Correo o contraseña incorrectos.');
+      }
+    } catch {
+      setError('Error al conectar con el servidor.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -31,9 +43,9 @@ export function Login() {
             <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Correo electrónico</label>
             <input
               type="email"
-              value={correo}
+              value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setCorreo(e.target.value);
+                setEmail(e.target.value);
                 setError('');
               }}
               placeholder="tu@correo.com"
@@ -72,9 +84,10 @@ export function Login() {
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Iniciar sesión
+            {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
           </button>
 
           <div className="text-center text-xs text-black/40 py-2">

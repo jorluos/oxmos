@@ -1,8 +1,9 @@
 import { useApp } from './context/AppContext';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminPanel } from './components/AdminPanel';
-import { Cart } from './components/Cart';
+import { Cart } from './components/LandingPageComponents/Cart';
 import { Catalog } from './components/Catalog';
+import { CatalogGenderSelection } from './components/CatalogGenderSelection';
 import { Checkout } from './components/Checkout';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
@@ -39,6 +40,7 @@ export function AppContent() {
       <Cart />
       <main>
         {currentPage === 'landing' && <LandingPage />}
+        {currentPage === 'catalog-gender' && <CatalogGenderSelection />}
         {currentPage === 'catalog' && <Catalog />}
         {currentPage === 'product' && <ProductDetail />}
         {currentPage === 'wishlist' && <Wishlist />}

@@ -91,6 +91,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>({
     currentPage: 'landing',
     currentProductId: null,
+    catalogGender: null,
     cart: [],
     wishlist: [],
     currentUser: null,
@@ -431,6 +432,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         navigate,
+        selectCatalogGender,
         addToCart,
         removeFromCart,
         updateCartQty,

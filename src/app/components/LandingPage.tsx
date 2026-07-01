@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { ArrowRight, Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatPrice } from '../data';
 import { getProductPrimaryImage, getProductDiscount, getProductCategoryLabel, getMinVariantPrice } from './productHelpers';
@@ -25,16 +24,10 @@ const HERO_SLIDES = [
   },
 ];
 
-const TESTIMONIALS = [
-  { name: 'Valentina M.', city: 'Bogotá', text: 'La calidad de las prendas es excepcional. El envío fue rápido y el pago contra entrega me dio mucha confianza.', rating: 5 },
-  { name: 'Andrés P.', city: 'Medellín', text: 'Compré el traje negro y quedé impresionado. El talle es perfecto y el servicio al cliente por WhatsApp fue excelente.', rating: 5 },
-  { name: 'Carolina R.', city: 'Cali', text: 'Mi vestido llegó exactamente como en las fotos. La atención fue rápida y el cambio de talla fue sin problema.', rating: 5 },
-];
-
 const FEATURES = [
-  { icon: '🚚', title: 'Envío Nacional', desc: 'Llegamos a toda Colombia. Seguimiento en tiempo real.' },
-  { icon: '💳', title: 'Pago Contra Entrega', desc: 'Pagas cuando recibes tu pedido. Sin riesgos.' },
-  { icon: '↩️', title: 'Cambios Gratis', desc: 'Hasta 30 días para cambiar de talla o estilo.' },
+  { icon: '🚚', title: 'Envío Nacional', desc: 'Llegamos a toda Colombia.' },
+  { icon: '💳', title: 'Pago con Wompi', desc: 'Tarjetas, PSE, Nequi y Bancolombia' },
+  { icon: '↩️', title: 'Cambios', desc: 'Hasta 15 días para cambiar de talla o estilo.' },
   { icon: '✅', title: 'Calidad Garantizada', desc: 'Materiales premium seleccionados con cuidado.' },
 ];
 

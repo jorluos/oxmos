@@ -1,12 +1,11 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import axios from '../../axios';
-import type { User } from '../types';
 import { Field } from './Field';
 
 export function Register() {
-  const { setCurrentUser, navigate } = useApp();
+  const { setCurrentUser, navigate, darkMode } = useApp();
   const [form, setForm] = useState({
     nombres: '', apellidos: '', cedula: '', telefono: '',
     correo: '', cumpleanos: '', direccion: '', password: '', confirmPassword: '',
@@ -40,9 +39,7 @@ export function Register() {
     e.preventDefault();
     if (!validate()) return;
     try {
-      await axios.get('/sanctum/csrf-cookie', {
-        withCredentials: true,
-      });
+      await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
 
       await axios.post(
         '/register',
@@ -56,16 +53,11 @@ export function Register() {
           password: form.password,
           password_confirmation: form.confirmPassword,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
-      const { data } = await axios.get('/api/user', {
-        withCredentials: true,
-      });
-
-      setCurrentUser(data.data);  // Usamos directamente lo que devuelve el backend sin mapear campo por campo
+      const { data } = await axios.get('/api/user', { withCredentials: true });
+      setCurrentUser(data.data);
       navigate('catalog');
     } catch (error: any) {
       if (error?.response?.status === 422) {
@@ -77,96 +69,107 @@ export function Register() {
   };
 
   return (
-    <div className="pt-16 min-h-screen bg-white">
-      <div className="max-w-lg mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl tracking-[0.3em] font-light mb-2">OXMOS</h1>
-          <p className="text-black/40 text-sm">Crea tu cuenta gratuita</p>
-        </div>
+    <div className={`pt-16 min-h-screen transition-colors ${darkMode ? 'bg-[#09090b] text-white' : 'bg-[#f7f5f2] text-black'}`}>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className={`absolute -top-20 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full blur-3xl ${darkMode ? 'bg-white/5' : 'bg-black/5'}`} />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Nombres" name="nombres" placeholder="María" value={form.nombres} error={errors.nombres} onChange={(value) => update('nombres', value)} />
-            <Field label="Apellidos" name="apellidos" placeholder="García López" value={form.apellidos} error={errors.apellidos} onChange={(value) => update('apellidos', value)} />
-            <Field label="Número de cédula" name="cedula" placeholder="1234567890" value={form.cedula} error={errors.cedula} onChange={(value) => update('cedula', value)} />
-            <Field label="Teléfono / WhatsApp" name="telefono" type="tel" placeholder="3001234567" value={form.telefono} error={errors.telefono} onChange={(value) => update('telefono', value)} />
+      <div className="relative max-w-lg mx-auto px-4 py-12">
+        <div className={`rounded-3xl border p-8 sm:p-10 shadow-2xl backdrop-blur-sm ${
+          darkMode ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-white'
+        }`}>
+          <div className="text-center mb-8">
+            <h1 className={`text-3xl tracking-[0.3em] font-light mb-2 ${darkMode ? 'text-white' : 'text-black'}`}>OXMOS</h1>
+            <p className={`text-sm ${darkMode ? 'text-white/55' : 'text-black/40'}`}>Crea tu cuenta gratuita</p>
           </div>
 
-          <Field label="Correo electrónico" name="correo" type="email" placeholder="tu@correo.com" value={form.correo} error={errors.correo} onChange={(value) => update('correo', value)} />
-          <Field label="Fecha de cumpleaños" name="cumpleanos" type="date" value={form.cumpleanos} error={errors.cumpleanos} onChange={(value) => update('cumpleanos', value)} />
-          <Field label="Dirección de residencia" name="direccion" placeholder="Calle, carrera, número, ciudad" value={form.direccion} error={errors.direccion} onChange={(value) => update('direccion', value)} />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Nombres" name="nombres" placeholder="María" value={form.nombres} error={errors.nombres} onChange={(value) => update('nombres', value)} />
+              <Field label="Apellidos" name="apellidos" placeholder="García López" value={form.apellidos} error={errors.apellidos} onChange={(value) => update('apellidos', value)} />
+              <Field label="Número de cédula" name="cedula" placeholder="1234567890" value={form.cedula} error={errors.cedula} onChange={(value) => update('cedula', value)} />
+              <Field label="Teléfono / WhatsApp" name="telefono" type="tel" placeholder="3001234567" value={form.telefono} error={errors.telefono} onChange={(value) => update('telefono', value)} />
+            </div>
 
-          <div>
-            <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Contraseña *</label>
-            <div className="relative">
+            <Field label="Correo electrónico" name="correo" type="email" placeholder="tu@correo.com" value={form.correo} error={errors.correo} onChange={(value) => update('correo', value)} />
+            <Field label="Fecha de cumpleaños" name="cumpleanos" type="date" value={form.cumpleanos} error={errors.cumpleanos} onChange={(value) => update('cumpleanos', value)} />
+            <Field label="Dirección de residencia" name="direccion" placeholder="Calle, carrera, número, ciudad" value={form.direccion} error={errors.direccion} onChange={(value) => update('direccion', value)} />
+
+            <div>
+              <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/55' : 'text-black/50'}`}>Contraseña *</label>
+              <div className="relative">
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('password', e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  className={`w-full border px-4 py-3 text-sm outline-none pr-12 transition-colors ${
+                    darkMode
+                      ? 'border-white/10 bg-white/[0.03] text-white placeholder:text-white/30 focus:border-white/30'
+                      : 'border-black/15 bg-white text-black placeholder:text-black/35 focus:border-black'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-white/35 hover:text-white/70' : 'text-black/30 hover:text-black/60'}`}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+            </div>
+
+            <div>
+              <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/55' : 'text-black/50'}`}>Confirmar contraseña *</label>
               <input
-                type={showPw ? 'text' : 'password'}
-                value={form.password}
-                
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  update('password', e.target.value)
-                }
-                placeholder="Mínimo 8 caracteres"
-                className={`w-full border px-4 py-3 text-sm outline-none pr-12 ${
-                  errors.password ? 'border-red-400' : 'border-black/20 focus:border-black'
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('confirmPassword', e.target.value)}
+                placeholder="Repite tu contraseña"
+                className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
+                  darkMode
+                    ? 'border-white/10 bg-white/[0.03] text-white placeholder:text-white/30 focus:border-white/30'
+                    : 'border-black/15 bg-white text-black placeholder:text-black/35 focus:border-black'
                 }`}
               />
-              <button
-                type="button"
-                onClick={() => setShowPw(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black"
-              >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+            </div>
+
+            {globalError && (
+              <p className={`text-sm text-center border py-2 px-3 rounded-lg ${darkMode ? 'text-red-200 bg-red-500/10 border-red-400/20' : 'text-red-500 bg-red-50 border-red-200'}`}>
+                {globalError}
+              </p>
+            )}
+
+            <p className={`text-xs leading-relaxed ${darkMode ? 'text-white/55' : 'text-black/40'}`}>
+              Al registrarte, aceptas nuestros{' '}
+              <button type="button" onClick={() => navigate('policies')} className={`underline underline-offset-2 ${darkMode ? 'text-white hover:text-white/70' : 'text-black hover:text-black/60'}`}>
+                términos y condiciones
+              </button>{' '}
+              y nuestra{' '}
+              <button type="button" onClick={() => navigate('policies')} className={`underline underline-offset-2 ${darkMode ? 'text-white hover:text-white/70' : 'text-black hover:text-black/60'}`}>
+                política de privacidad
+              </button>.
+            </p>
+
+            <button
+              type="submit"
+              className={`w-full py-4 text-sm tracking-widest uppercase transition-colors ${
+                darkMode ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/80'
+              }`}
+            >
+              Crear cuenta
+            </button>
+
+            <div className={`text-center text-xs ${darkMode ? 'text-white/55' : 'text-black/40'}`}>
+              ¿Ya tienes una cuenta?{' '}
+              <button type="button" onClick={() => navigate('login')} className={`underline ${darkMode ? 'text-white hover:text-white/70' : 'text-black'}`}>
+                Inicia sesión
               </button>
             </div>
-            {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-          </div>
-
-          <div>
-            <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Confirmar contraseña *</label>
-            <input
-              type="password"
-              value={form.confirmPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                update('confirmPassword', e.target.value)
-              }
-              placeholder="Repite tu contraseña"
-              className={`w-full border px-4 py-3 text-sm outline-none ${
-                errors.confirmPassword ? 'border-red-400' : 'border-black/20 focus:border-black'
-              }`}
-            />
-            {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
-          </div>
-
-          {globalError && (
-            <p className="text-red-500 text-sm text-center bg-red-50 border border-red-200 py-2 px-3">{globalError}</p>
-          )}
-
-          <p className="text-xs text-black/40 leading-relaxed">
-            Al registrarte, aceptas nuestros{' '}
-            <button type="button" onClick={() => navigate('policies')} className="underline hover:text-black">
-              términos y condiciones
-            </button>{' '}
-            y nuestra{' '}
-            <button type="button" onClick={() => navigate('policies')} className="underline hover:text-black">
-              política de privacidad
-            </button>.
-          </p>
-
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition-colors"
-          >
-            Crear cuenta
-          </button>
-
-          <div className="text-center text-xs text-black/40">
-            ¿Ya tienes una cuenta?{' '}
-            <button type="button" onClick={() => navigate('login')} className="text-black underline">
-              Inicia sesión
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

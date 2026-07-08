@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { Product, CartItem, User, Order, Page, Address, ProductVariant } from '../types';
+﻿import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import type { Product, CartItem, User, Order, Page, Address, ProductVariant, Gender } from '../types';
 import axios from '../../axios';
 
 // ============================================================
@@ -8,6 +8,7 @@ import axios from '../../axios';
 interface AppState {
   currentPage: Page;
   currentProductId: string | null;
+  catalogGender: Gender | null;
   cart: CartItem[];                           // Ahora usa el nuevo CartItem (alineado con DB)
   wishlist: number[];                         // IDs de productos
   currentUser: User | null;
@@ -20,6 +21,7 @@ interface AppState {
 
 interface AppContextType extends AppState {
   navigate: (page: Page, productId?: string) => void;
+  selectCatalogGender: (gender: Gender) => void;
   addToCart: (productId: number, variantId: number, quantity: number) => Promise<void>;
   removeFromCart: (itemId: number) => Promise<void>;
   updateCartQty: (itemId: number, qty: number) => Promise<void>;
@@ -86,10 +88,37 @@ const toUser = (data: any): User => ({
 // ============================================================
 const AppContext = createContext<AppContextType | null>(null);
 
+const PATH_TO_PAGE: Record<string, Page> = {
+  '/': 'landing',
+  '/catalog': 'catalog',
+  '/catalog-gender': 'catalog-gender',
+  '/policies': 'policies',
+  '/login': 'login',
+  '/register': 'register',
+  '/wishlist': 'wishlist',
+  '/checkout': 'checkout',
+  '/admin': 'admin-login',
+  '/admin/panel': 'admin',
+};
+
+const PAGE_TO_PATH: Partial<Record<Page, string>> = {
+  landing: '/',
+  catalog: '/catalog',
+  'catalog-gender': '/catalog-gender',
+  policies: '/policies',
+  login: '/login',
+  register: '/register',
+  wishlist: '/wishlist',
+  checkout: '/checkout',
+  'admin-login': '/admin',
+  admin: '/admin/panel',
+};
+
+const getPageFromPath = (pathname: string): Page => PATH_TO_PAGE[pathname] ?? 'landing';
 export function AppProvider({ children }: { children: React.ReactNode }) {
   // Estado inicial vacío (sin datos mock)
-  const [state, setState] = useState<AppState>({
-    currentPage: 'landing',
+  const [state, setState] = useState<AppState>(() => ({
+    currentPage: getPageFromPath(window.location.pathname),
     currentProductId: null,
     catalogGender: null,
     cart: [],
@@ -100,7 +129,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     orders: [],
     adminLoggedIn: false,
     darkMode: false,
-  });
+  }));
 
   // ==========================================================
   // HELPERS: Fetch carrito, wishlist y productos desde API
@@ -420,6 +449,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const cartCount = state.cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const selectCatalogGender = useCallback((gender: Gender) => {
+    setState(s => ({
+      ...s,
+      catalogGender: gender,
+      currentPage: 'catalog',
+      currentProductId: null,
+      isCartOpen: false,
+    }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const toggleDarkMode = useCallback(() => {
     setState(s => ({ ...s, darkMode: !s.darkMode }));
   }, []);
@@ -467,3 +507,5 @@ export function useApp() {
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 }
+
+

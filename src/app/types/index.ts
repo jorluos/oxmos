@@ -7,7 +7,7 @@ export type OrderStatus = 'pendiente' | 'en_preparacion' | 'enviado' | 'entregad
 export type PaymentStatus = 'pendiente' | 'pagado' | 'reembolsado' | 'fallido';
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'otros';
 export type Page =
-  | 'landing' | 'catalog' | 'product' | 'checkout' | 'wishlist'
+  | 'landing' | 'catalog-gender' | 'catalog' | 'product' | 'checkout' | 'wishlist'
   | 'policies' | 'login' | 'register' | 'admin' | 'admin-login';
 
 // ============================================================
@@ -336,3 +336,4 @@ export interface PaginatedResponse<T> {
     to: number;
   };
 }
+

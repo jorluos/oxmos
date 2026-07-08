@@ -1,11 +1,9 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import axios from '../../axios';
-import type { User } from '../types';
 
 export function Login() {
-  const { login, navigate } = useApp();
+  const { login, navigate, darkMode } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -31,81 +29,101 @@ export function Login() {
   };
 
   return (
-    <div className="pt-16 min-h-screen bg-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl tracking-[0.3em] font-light mb-2">OXMOS</h1>
-          <p className="text-black/40 text-sm">Inicia sesión en tu cuenta</p>
-        </div>
+    <div className={`pt-16 min-h-screen transition-colors ${darkMode ? 'bg-[#09090b] text-white' : 'bg-[#f7f5f2] text-black'}`}>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className={`absolute -top-20 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full blur-3xl ${darkMode ? 'bg-white/5' : 'bg-black/5'}`} />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Correo electrónico</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setEmail(e.target.value);
-                setError('');
-              }}
-              placeholder="tu@correo.com"
-              required
-              className="w-full border border-black/20 focus:border-black px-4 py-3 text-sm outline-none"
-            />
+      <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+        <div className={`w-full max-w-md rounded-3xl border p-8 sm:p-10 shadow-2xl backdrop-blur-sm ${
+          darkMode ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-white'
+        }`}>
+          <div className="text-center mb-8">
+            <h1 className={`text-3xl tracking-[0.3em] font-light mb-2 ${darkMode ? 'text-white' : 'text-black'}`}>OXMOS</h1>
+            <p className={`text-sm ${darkMode ? 'text-white/55' : 'text-black/40'}`}>Inicia sesión en tu cuenta</p>
           </div>
-          
-          <div>
-            <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">Contraseña</label>
-            <div className="relative">
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/55' : 'text-black/50'}`}>Correo electrónico</label>
               <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
+                type="email"
+                value={email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setPassword(e.target.value);
+                  setEmail(e.target.value);
                   setError('');
                 }}
-                placeholder="••••••••"
+                placeholder="tu@correo.com"
                 required
-                className="w-full border border-black/20 focus:border-black px-4 py-3 text-sm outline-none pr-12"
+                className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
+                  darkMode
+                    ? 'border-white/10 bg-white/[0.03] text-white placeholder:text-white/30 focus:border-white/30'
+                    : 'border-black/15 bg-white text-black placeholder:text-black/35 focus:border-black'
+                }`}
               />
+            </div>
+
+            <div>
+              <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/55' : 'text-black/50'}`}>Contraseña</label>
+              <div className="relative">
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="••••••••"
+                  required
+                  className={`w-full border px-4 py-3 text-sm outline-none pr-12 transition-colors ${
+                    darkMode
+                      ? 'border-white/10 bg-white/[0.03] text-white placeholder:text-white/30 focus:border-white/30'
+                      : 'border-black/15 bg-white text-black placeholder:text-black/35 focus:border-black'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-white/35 hover:text-white/70' : 'text-black/30 hover:text-black/60'}`}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <p className={`text-sm text-center border py-2 px-3 rounded-lg ${darkMode ? 'text-red-200 bg-red-500/10 border-red-400/20' : 'text-red-500 bg-red-50 border-red-200'}`}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-4 text-sm tracking-widest uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                darkMode ? 'bg-white text-black hover:bg-white/90' : 'bg-black text-white hover:bg-black/80'
+              }`}
+            >
+              {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
+            </button>
+
+            <div className={`text-center text-xs py-2 ${darkMode ? 'text-white/55' : 'text-black/40'}`}>
+              ¿No tienes una cuenta?{' '}
               <button
                 type="button"
-                onClick={() => setShowPw(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black"
+                onClick={() => navigate('register')}
+                className={`underline underline-offset-2 transition-colors ${darkMode ? 'text-white hover:text-white/70' : 'text-black hover:text-black/60'}`}
               >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                Regístrate aquí
               </button>
             </div>
+          </form>
+
+          <div className={`mt-8 p-4 border text-center rounded-2xl ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-black/10 bg-black/[0.03]'}`}>
+            <p className={`text-xs ${darkMode ? 'text-white/45' : 'text-black/40'}`}>
+              Cuenta de prueba: <strong className={darkMode ? 'text-white/80' : 'text-black'}>maria@ejemplo.com</strong> · contraseña: <strong className={darkMode ? 'text-white/80' : 'text-black'}>123456</strong>
+            </p>
           </div>
-
-          {error && (
-            <p className="text-red-500 text-sm text-center bg-red-50 border border-red-200 py-2 px-3">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
-          </button>
-
-          <div className="text-center text-xs text-black/40 py-2">
-            ¿No tienes una cuenta?{' '}
-            <button
-              type="button"
-              onClick={() => navigate('register')}
-              className="text-black underline underline-offset-2 hover:text-black/60"
-            >
-              Regístrate aquí
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-8 p-4 bg-black/3 border border-black/10 text-center">
-          <p className="text-xs text-black/40">
-            Cuenta de prueba: <strong>maria@ejemplo.com</strong> · contraseña: <strong>123456</strong>
-          </p>
         </div>
       </div>
     </div>

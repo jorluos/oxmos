@@ -1,13 +1,15 @@
-import { useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { ShoppingBag, Heart, User, Menu, X, Search, ChevronDown, Moon, Sun } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import axios from '../../axios';
 
 export function Header() {
   const { navigate, cartCount, wishlist, currentUser, logout, currentPage, darkMode, toggleDarkMode, setCartOpen } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const searchBoxRef = useRef<HTMLFormElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleLogout = async () => {
     await logout();
@@ -20,13 +22,47 @@ export function Header() {
     { label: 'Políticas', page: 'policies' as const },
   ];
 
+  useEffect(() => {
+    if (!searchOpen) return;
+
+    searchInputRef.current?.focus();
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleSearchSubmit();
+      }
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [searchOpen]);
+
+  const handleSearchSubmit = () => {
+    navigate('catalog');
+    setSearchOpen(false);
+    setSearchQuery('');
+  };
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 border-b transition-colors ${
       darkMode ? 'bg-black border-white/10' : 'bg-white border-black/10'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <button
             onClick={() => navigate('landing')}
             className={`text-2xl tracking-[0.3em] font-light hover:opacity-70 transition-opacity ${
@@ -34,12 +70,11 @@ export function Header() {
             }`}
           >OXMOS</button>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map(link => (
               <button
                 key={link.page}
-                onClick={() => {navigate(link.page); setUserMenuOpen(false)}} // Cierra el menu de usuario al navegar
+                onClick={() => { navigate(link.page); setUserMenuOpen(false); }}
                 className={`text-sm tracking-widest uppercase transition-all ${
                   darkMode
                     ? currentPage === link.page
@@ -55,13 +90,10 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Actions */}
           <div className="flex items-center gap-3">
             <button
               onClick={toggleDarkMode}
-              className={`p-2 rounded-full transition-colors ${
-                darkMode ? 'hover:bg-white/10' : 'hover:bg-black/5'
-              }`}
+              className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}
               aria-label="Cambiar tema"
             >
               {darkMode ? <Sun size={20} className="text-white" /> : <Moon size={20} className="text-black" />}
@@ -69,9 +101,7 @@ export function Header() {
 
             <button
               onClick={() => setSearchOpen(v => !v)}
-              className={`p-2 rounded-full transition-colors ${
-                darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
-              }`}
+              className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'}`}
               aria-label="Buscar"
             >
               <Search size={20} />
@@ -79,9 +109,7 @@ export function Header() {
 
             <button
               onClick={() => navigate('wishlist')}
-              className={`p-2 rounded-full transition-colors relative ${
-                darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
-              }`}
+              className={`p-2 rounded-full transition-colors relative ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'}`}
               aria-label="Favoritos"
             >
               <Heart size={20} />
@@ -96,9 +124,7 @@ export function Header() {
 
             <button
               onClick={() => setCartOpen(true)}
-              className={`p-2 rounded-full transition-colors relative ${
-                darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
-              }`}
+              className={`p-2 rounded-full transition-colors relative ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'}`}
               aria-label="Carrito"
             >
               <ShoppingBag size={20} />
@@ -115,9 +141,7 @@ export function Header() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className={`flex items-center gap-1 p-2 rounded-full transition-colors ${
-                    darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'
-                  }`}
+                  className={`flex items-center gap-1 p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'}`}
                 >
                   <User size={20} />
                   <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
@@ -135,9 +159,7 @@ export function Header() {
                         handleLogout();
                         setUserMenuOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                        darkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-black'
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${darkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-black'}`}
                     >
                       Cerrar sesión
                     </button>
@@ -167,44 +189,53 @@ export function Header() {
           </div>
         </div>
 
-        {/* Search bar */}
         {searchOpen && (
-          <div className={`border-t py-3 flex items-center gap-2 ${
-            darkMode ? 'border-white/10' : 'border-black/10'
-          }`}>
+          <form
+            ref={searchBoxRef}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearchSubmit();
+            }}
+            className={`border-t py-3 flex items-center gap-2 ${darkMode ? 'border-white/10' : 'border-black/10'}`}
+          >
             <Search size={18} className={darkMode ? 'text-white/40' : 'text-black/40'} />
             <input
+              ref={searchInputRef}
               autoFocus
               type="text"
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               placeholder="Buscar prendas, marcas..."
               className={`flex-1 outline-none text-sm bg-transparent ${darkMode ? 'text-white placeholder:text-white/40' : 'text-black placeholder:text-black/40'}`}
-              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
-              e.key === 'Escape' && setSearchOpen(false)
-            }
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === 'Escape') setSearchOpen(false);
+                if (e.key === 'Enter') handleSearchSubmit();
+              }}
+              onKeyUp={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === 'Enter') handleSearchSubmit();
+              }}
+              onBlur={() => setSearchOpen(false)}
             />
             <button
+              type="button"
               onClick={() => setSearchOpen(false)}
               className={darkMode ? 'text-white/40 hover:text-white' : 'text-black/40 hover:text-black'}
+              aria-label="Cerrar búsqueda"
             >
               <X size={18} />
             </button>
-          </div>
+          </form>
         )}
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
-        <div className={`md:hidden border-t ${
-          darkMode ? 'bg-black border-white/10' : 'bg-white border-black/10'
-        }`}>
+        <div className={`md:hidden border-t ${darkMode ? 'bg-black border-white/10' : 'bg-white border-black/10'}`}>
           <div className="px-4 py-4 flex flex-col gap-4">
             {navLinks.map(link => (
               <button
                 key={link.page}
                 onClick={() => { navigate(link.page); setMenuOpen(false); }}
-                className={`text-left text-sm tracking-widest uppercase ${
-                  darkMode ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
-                }`}
+                className={`text-left text-sm tracking-widest uppercase ${darkMode ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'}`}
               >
                 {link.label}
               </button>
@@ -212,9 +243,7 @@ export function Header() {
             {!currentUser && (
               <button
                 onClick={() => { navigate('login'); setMenuOpen(false); }}
-                className={`text-left text-sm tracking-widest uppercase ${
-                  darkMode ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
-                }`}
+                className={`text-left text-sm tracking-widest uppercase ${darkMode ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'}`}
               >
                 Ingresar
               </button>
@@ -225,5 +254,3 @@ export function Header() {
     </header>
   );
 }
-
-

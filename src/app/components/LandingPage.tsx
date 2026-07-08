@@ -1,4 +1,5 @@
-import { ArrowRight } from 'lucide-react';
+﻿import { ArrowRight, Quote, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatPrice } from '../data';
 import { getProductPrimaryImage, getProductDiscount, getProductCategoryLabel, getMinVariantPrice } from './productHelpers';
@@ -29,6 +30,25 @@ const FEATURES = [
   { icon: '💳', title: 'Pago con Wompi', desc: 'Tarjetas, PSE, Nequi y Bancolombia' },
   { icon: '↩️', title: 'Cambios', desc: 'Hasta 15 días para cambiar de talla o estilo.' },
   { icon: '✅', title: 'Calidad Garantizada', desc: 'Materiales premium seleccionados con cuidado.' },
+];
+
+
+const TESTIMONIALS = [
+  {
+    text: 'La calidad superó lo que esperaba y la entrega fue rápida. Voy a comprar otra vez.',
+    name: 'Laura Méndez',
+    city: 'Bogotá',
+  },
+  {
+    text: 'El proceso de compra fue claro y el pedido llegó tal cual se veía en la tienda.',
+    name: 'Camilo Rojas',
+    city: 'Medellín',
+  },
+  {
+    text: 'Muy buena atención y prendas con un acabado excelente. Se nota el cuidado en cada detalle.',
+    name: 'Daniela Torres',
+    city: 'Cali',
+  },
 ];
 
 export function LandingPage() {

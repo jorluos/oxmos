@@ -24,10 +24,10 @@ class OrderController extends Controller
 
         $user = $request->user();
 
-        // Validar que la dirección pertenece al usuario
-        $address = Address::where('id', $validated['address_id'])
-            ->where('user_id', $user->id)
-            ->firstOrFail();
+            // Validar que la dirección pertenece al usuario
+            $address = Address::where('id', $validated['address_id'])
+                ->where('user_id', $user->id)
+                ->firstOrFail();
 
         // Obtener el carrito activo
         $cart = Cart::where('user_id', $user->id)

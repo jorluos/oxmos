@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ShoppingBag, Heart, User, Menu, X, Search, ChevronDown, Moon, Sun } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -192,7 +192,7 @@ export function Header() {
         {searchOpen && (
           <form
             ref={searchBoxRef}
-            onSubmit={(e) => {
+            onSubmit={(e: React.FormEvent) => {
               e.preventDefault();
               handleSearchSubmit();
             }}

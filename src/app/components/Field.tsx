@@ -1,4 +1,4 @@
-﻿// Field.tsx
+// Field.tsx
 import React from 'react';
 import { useApp } from '../context/AppContext';
 
@@ -21,7 +21,7 @@ export const Field: React.FC<FieldProps> = ({ label, name, type = 'text', placeh
         <input
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
           placeholder={placeholder}
           className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
             error

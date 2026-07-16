@@ -2,18 +2,28 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useState } from 'react';
 
-type HeroSlide = {
-  image: string;
-  tag: string;
-  title: string;
-  subtitle: string;
-};
+const HERO_SLIDES = [
+  {
+    image: 'https://images.unsplash.com/photo-1771591485611-45264af86618?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=800&q=80',
+    tag: 'NUEVA COLECCIÓN',
+    title: 'Define Tu\nEstilo Propio',
+    subtitle: 'Prendas que hablan por ti. Moda contemporánea con alma.',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1603189343302-e603f7add05a?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=800&q=80',
+    tag: 'COLECCIÓN HOMBRE',
+    title: 'Elegancia\nSin Tiempo',
+    subtitle: 'Trajes y abrigos para el hombre que marca la diferencia.',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1769103638527-3240c2f5d4ad?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=800&q=80',
+    tag: 'TENDENCIAS',
+    title: 'Vive La\nModa Ahora',
+    subtitle: 'Las últimas tendencias en tus manos. Envío a todo el país.',
+  },
+];
 
-type HeroSlidesProps = {
-  HERO_SLIDES: HeroSlide[];
-};
-
-export function HeroSlides({ HERO_SLIDES }: HeroSlidesProps) {
+export function HeroSlides() {
   const { navigate } = useApp();
   const [slide, setSlide] = useState(0);
 

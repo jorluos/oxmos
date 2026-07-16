@@ -1,48 +1,63 @@
 import { formatPrice } from '../../data';
 import { useApp } from '../../context/AppContext';
+import { getProductDiscount, getProductPrimaryImage, getProductCategoryLabel, getMinVariantPrice } from '../productHelpers';
 
 export function FavCards(){
     const { navigate, products, darkMode } = useApp();
-    const featured = products.filter(p => p.featured).slice(0, 4);
-    return(
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {featured.map(product => (
-            <button
-              key={product.id}
-              onClick={() => navigate('product', product.id)}
-              className="group text-left"
-            >
-              <div className={`aspect-[3/4] overflow-hidden relative ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                <img
-                  src={product.frontImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0 absolute inset-0"
-                />
-                <img
-                  src={product.backImage}
-                  alt={`${product.name} trasera`}
-                  className="w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
-                />
-                {product.discount && (
-                  <span className={`absolute top-3 right-3 text-[10px] px-2 py-0.5 ${
-                    darkMode ? 'bg-white text-black' : 'bg-black text-white'
-                  }`}>
-                    -{product.discount}%
-                  </span>
-                )}
-              </div>
-              <div className="mt-3 px-1">
-                <p className={`text-xs tracking-wide ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{product.type}</p>
-                <p className={`mt-0.5 text-sm ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>{formatPrice(product.price)}</span>
-                  {product.originalPrice && (
-                    <span className={`text-xs line-through ${darkMode ? 'text-white/30' : 'text-black/30'}`}>{formatPrice(product.originalPrice)}</span>
-                  )}
+    const featured = products.filter(p => p.is_featured).slice(0, 4);
+    return (
+        <section className={`py-20 px-4 sm:px-8 ${darkMode ? 'bg-black' : 'bg-white'}`}>
+            <div className="max-w-7xl mx-auto">
+                <div className="flex items-end justify-between mb-10">
+                    <div>
+                        <p className={`text-xs tracking-[0.3em] uppercase mb-2 ${darkMode ? 'text-white/40' : 'text-black/40'}`}>Destacados</p>
+                        <h2 className={`text-2xl sm:text-3xl ${darkMode ? 'text-white' : 'text-black'}`}>Productos Destacados</h2>
+                    </div>
+                    <button
+                        onClick={() => navigate('catalog')}
+                        className={`text-xs tracking-wider border-b pb-0.5 transition-colors hidden sm:block ${darkMode ? 'text-white/40 border-white/20 hover:text-white hover:border-white' : 'text-black/40 border-black/20 hover:text-black hover:border-black'
+                        }`}
+                    >
+                        Ver todo
+                    </button>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
-    )
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    {featured.map(product => {
+                        const imgUrl = getProductPrimaryImage(product);
+                        const discount = getProductDiscount(product);
+                        const categoryLabel = getProductCategoryLabel(product);
+                        return (
+                            <div
+                                key={product.id}
+                                onClick={() => navigate('product', String(product.id))}
+                                className="group cursor-pointer"
+                            >
+                                <div className={`relative aspect-[3/4] overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                                    {imgUrl ? (
+                                        <img src={imgUrl} alt={product.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-black/20">Sin imagen</div>
+                                    )}
+                                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                                        {categoryLabel && (
+                                            <span className={`text-[9px] tracking-widest px-2 py-1 uppercase ${darkMode ? 'bg-white text-black' : 'bg-black text-white'
+                                            }`}>{categoryLabel}</span>
+                                        )}
+                                        {discount && <span className={`text-[9px] tracking-widest px-2 py-1 ${darkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>-{discount}%</span>}
+                                    </div>
+                                </div>
+                                <div className="mt-3">
+                                    <p className={`text-[11px] tracking-wide uppercase ${darkMode ? 'text-white/40' : 'text-black/40'}`}>{product.gender} · {product.type ?? 'General'}</p>
+                                    <p className={`text-sm mt-0.5 ${darkMode ? 'text-white' : 'text-black'}`}>{product.name}</p>
+                                    <span className={`text-sm font-medium mt-1 block ${darkMode ? 'text-white' : 'text-black'}`}>
+                                        {formatPrice(getMinVariantPrice(product))}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </section>
+    );
 }

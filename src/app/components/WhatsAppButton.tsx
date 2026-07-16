@@ -1,7 +1,7 @@
 export function WhatsAppButton() {
   return (
     <a
-      href="https://wa.me/573000000000?text=Hola!%20Quisiera%20mÃ¡s%20informaciÃ³n%20sobre%20sus%20productos."
+      href="https://wa.me/573168774348?text=Hola!%20Quisiera%20mÃ¡s%20informaciÃ³n%20sobre%20sus%20productos."
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg z-40 transition-colors"

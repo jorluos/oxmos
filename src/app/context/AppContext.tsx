@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Product, CartItem, User, Order, Page, Address, ProductVariant, Gender } from '../types';
 import axios from '../../axios';
 
@@ -370,8 +370,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data } = productData instanceof FormData
         ? await axios.post('/api/admin/products', productData)
         : await axios.post('/api/admin/products', productData, {
-            headers: { 'Content-Type': 'application/json' }
-          });
+          headers: { 'Content-Type': 'application/json' }
+        });
       // Backend responde: { success: true, data: { id, name, variants, images, category } }
       setState(s => ({ ...s, products: [...s.products, data.data] }));
     } catch (err: any) {

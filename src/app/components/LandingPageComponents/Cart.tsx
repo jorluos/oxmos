@@ -60,24 +60,30 @@ export function Cart() {
           ) : (
             <div className="space-y-5">
               {cart.map((item, idx) => {
-                const product = getProduct(item.productId);
+                const product = getProduct(String(item.product_id));
                 if (!product) return null;
-                const colorName = product.colorNames[product.colors.indexOf(item.color)] ?? item.color;
+                const variant = product.variants?.find(v => v.id === item.product_variant_id);
+                const colorName = variant?.color_name ?? '';
+                const sizeName = variant?.size ?? '';
+                const image = product.images?.find(img => img.is_primary)?.image_url 
+                  ?? product.images?.[0]?.image_url 
+                  ?? '';
+
                 return (
-                  <div key={`${item.productId}-${item.size}-${item.color}-${idx}`} className="flex gap-4">
+                  <div key={`${item.id}-${idx}`} className="flex gap-4">
                     <div className={`w-20 h-24 flex-shrink-0 overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                      <img src={product.frontImage} alt={product.name} className="w-full h-full object-cover" />
+                      <img src={image} alt={product.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="text-sm font-medium truncate">{product.name}</p>
                           <p className={`text-xs mt-0.5 ${darkMode ? 'text-white/40' : 'text-black/40'}`}>
-                            Talla: {item.size} · {colorName}
+                            Talla: {sizeName} · {colorName}
                           </p>
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.productId, item.size, item.color)}
+                          onClick={() => removeFromCart(item.id)}
                           className={`ml-2 flex-shrink-0 ${
                             darkMode ? 'text-white/30 hover:text-white' : 'text-black/30 hover:text-black'
                           }`}
@@ -89,8 +95,8 @@ export function Cart() {
                         <div className={`flex items-center border ${darkMode ? 'border-white/20' : 'border-black/20'}`}>
                           <button
                             onClick={() => {
-                              if (item.quantity <= 1) removeFromCart(item.productId, item.size, item.color);
-                              else updateCartQty(item.productId, item.size, item.color, item.quantity - 1);
+                              if (item.quantity <= 1) removeFromCart(item.id);
+                              else updateCartQty(item.id, item.quantity - 1);
                             }}
                             className={`w-7 h-7 flex items-center justify-center ${
                               darkMode ? 'hover:bg-white/5' : 'hover:bg-black/5'
@@ -100,7 +106,7 @@ export function Cart() {
                           </button>
                           <span className="w-8 text-center text-xs">{item.quantity}</span>
                           <button
-                            onClick={() => updateCartQty(item.productId, item.size, item.color, item.quantity + 1)}
+                            onClick={() => updateCartQty(item.id, item.quantity + 1)}
                             className={`w-7 h-7 flex items-center justify-center ${
                               darkMode ? 'hover:bg-white/5' : 'hover:bg-black/5'
                             }`}
@@ -108,7 +114,7 @@ export function Cart() {
                             <Plus size={12} />
                           </button>
                         </div>
-                        <span className="text-sm font-medium">{formatPrice(product.price * item.quantity)}</span>
+                        <span className="text-sm font-medium">{formatPrice(item.unit_price * item.quantity)}</span>
                       </div>
                     </div>
                   </div>

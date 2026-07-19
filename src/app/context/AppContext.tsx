@@ -218,8 +218,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         cart: data.cart?.items ?? [...s.cart, data.item],
         isCartOpen: true,
       }));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error adding to cart:', err);
+      console.log(err.response);
+      console.log(err.response?.data);
+      console.log(err.response?.status);
     }
   }, []);
 

@@ -118,12 +118,6 @@ export function Login() {
               </button>
             </div>
           </form>
-
-          <div className={`mt-8 p-4 border text-center rounded-2xl ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-black/10 bg-black/[0.03]'}`}>
-            <p className={`text-xs ${darkMode ? 'text-white/45' : 'text-black/40'}`}>
-              Cuenta de prueba: <strong className={darkMode ? 'text-white/80' : 'text-black'}>maria@ejemplo.com</strong> · contraseña: <strong className={darkMode ? 'text-white/80' : 'text-black'}>123456</strong>
-            </p>
-          </div>
         </div>
       </div>
     </div>

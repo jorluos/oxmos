@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, Package, CheckCircle, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatPrice } from '../data';
-import type { ChangeEvent } from 'react';
-
+import { Field } from './CheckoutComponents/CheckoutField';
 
 export function Checkout() {
   const { cart, cartTotal, getProduct, currentUser, addOrder, clearCart, navigate, darkMode } = useApp();
@@ -22,8 +21,14 @@ export function Checkout() {
     notas: '',
   });
 
+  type FormState = typeof form;
   type FormErrors = Partial<Record<keyof typeof form, string>>;
   const [errors, setErrors] = useState<FormErrors>({});
+  
+  const handleFieldChange = (name: keyof FormState, value: string) => {
+    setForm(f => ({ ...f, [name]: value }));
+    setErrors(er => ({ ...er, [name]: '' }));
+  };
 
   const validate = () => {
     const e: Partial<typeof form> = {};
@@ -45,11 +50,7 @@ export function Checkout() {
 
   const handleConfirm = async () => {
     const defaultAddress = currentUser?.addresses?.find(a => a.is_default_shipping) ?? currentUser?.addresses?.[0];
-    const addressId = defaultAddress?.id;
-    if (!addressId) {
-      alert('No tienes una dirección registrada en tu cuenta de usuario. Agrega una en tu base de datos o perfil para poder comprar.');
-      return;
-    }
+    const addressId = defaultAddress?.id ?? 0;
 
     const id = await addOrder({
       address_id: addressId,
@@ -60,30 +61,6 @@ export function Checkout() {
     clearCart();
     setStep('success');
   };
-
-  const Field = ({
-    label, name, type = 'text', placeholder = '', required = true,
-  }: {
-    label: string; name: keyof typeof form; type?: string; placeholder?: string; required?: boolean;
-  }) => (
-    <div>
-      <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/50' : 'text-black/50'}`}>{label}{required && ' *'}</label>
-      <input
-        type={type}
-        value={form[name]}
-        
-        onChange={(e: ChangeEvent<HTMLInputElement>) => {
-          setForm(f => ({ ...f, [name]: e.target.value }));
-          setErrors(er => ({ ...er, [name]: '' }));
-        }}
-        placeholder={placeholder}
-        className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
-          errors[name] ? 'border-red-400' : 'border-black/20 focus:border-black'
-        }`}
-      />
-      {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
-    </div>
-  );
 
   if (step === 'success') {
     if (cart.length === 0 && !orderId) {
@@ -116,7 +93,7 @@ export function Checkout() {
             Seguir comprando
           </button>
           <a
-            href="https://wa.me/573000000000?text=Hola!%20Acabo%20de%20realizar%20el%20pedido%20"
+            href="https://wa.me/573168774348?text=Hola!%20Acabo%20de%20realizar%20el%20pedido%20"
             target="_blank"
             rel="noopener noreferrer"
             className={`border px-8 py-3 text-sm tracking-widest uppercase transition-colors ${darkMode ? 'border-white text-black hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}` }
@@ -164,19 +141,19 @@ export function Checkout() {
               <div className="space-y-5">
                 <h3 className={`border-b pb-3 ${darkMode ? 'border-white/10' : 'border-black/10'}`}>Datos personales</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Nombres" name="nombres" />
-                  <Field label="Apellidos" name="apellidos" />
-                  <Field label="Número de cédula" name="cedula" />
-                  <Field label="Teléfono / WhatsApp" name="telefono" type="tel" />
-                  <Field label="Correo electrónico" name="correo" type="email" />
+                  <Field label="Nombres" name="nombres" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
+                  <Field label="Apellidos" name="apellidos" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
+                  <Field label="Número de cédula" name="cedula" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
+                  <Field label="Teléfono / WhatsApp" name="telefono" type="tel" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
+                  <Field label="Correo electrónico" name="correo" type="email" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
                 </div>
 
                 <h3 className={`border-b pb-3 pt-2 ${darkMode ? 'border-white/10' : 'border-black/10'}`}>Dirección de entrega</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <Field label="Dirección completa" name="direccion" placeholder="Calle, Carrera, #..." />
+                    <Field label="Dirección completa" name="direccion" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
                   </div>
-                  <Field label="Ciudad / Municipio" name="ciudad" />
+                  <Field label="Ciudad / Municipio" name="ciudad" form={form} errors={errors} darkMode={darkMode} onChange={handleFieldChange}/>
                 </div>
 
                 <div>

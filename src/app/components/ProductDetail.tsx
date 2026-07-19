@@ -49,23 +49,36 @@ export function ProductDetail() {
 
   // Encontrar la variante que coincide con talla y color seleccionados
   const selectedVariant = useMemo(() => {
-    if (!selectedSize) return null;
-    return product.variants?.find(v =>
-      v.is_active &&
+  if (!selectedSize) return null;
+
+  return (
+    product.variants?.find(v =>
       v.size === selectedSize &&
       (!currentColorHex || v.color_hex === currentColorHex)
-    ) ?? null;
-  }, [product, selectedSize, currentColorHex]);
+    ) ?? null
+  );
+}, [product, selectedSize, currentColorHex]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedSize) {
+      console.log("no hay talla");
       setSizeError(true);
       return;
     }
-    const variant = selectedVariant ?? product.variants?.find(v => v.size === selectedSize && v.is_active);
-    if (!variant) return;
+    console.log("Talla:", selectedSize);
+    console.log("Color:", currentColorHex);
+    console.log("Variantes:", product.variants);
+    const variant = selectedVariant ?? product.variants?.find(v => v.size === selectedSize);
+    console.log("variante encontrada", variant);
+    if (!variant){
+      console.log("no encontro variante");
+      return;
+    };
+    console.log("antes de addtocart")
     setSizeError(false);
-    addToCart(product.id as number, variant.id, quantity);
+    await addToCart(product.id as number, variant.id, quantity);
+    console.table(product.variants)
+    console.log("despues de addtocart")
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

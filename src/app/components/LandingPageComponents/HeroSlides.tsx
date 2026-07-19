@@ -1,25 +1,28 @@
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useState } from 'react';
+import HeroImage1 from '../../../../assets/Hero1.png';
+import HeroImage2 from '../../../../assets/Hero2.png';
+import HeroImage3 from '../../../../assets/Hero3.png';
 
 const HERO_SLIDES = [
   {
-    image: 'https://images.unsplash.com/photo-1771591485611-45264af86618?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=800&q=80',
+    image: HeroImage1,
     tag: 'NUEVA COLECCIÓN',
     title: 'Define Tu\nEstilo Propio',
-    subtitle: 'Prendas que hablan por ti. Moda contemporánea con alma.',
+    subtitle: 'Prendas que reflejan tu esencia. Diseños contemporáneos para cada ocasión.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1603189343302-e603f7add05a?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=800&q=80',
-    tag: 'COLECCIÓN HOMBRE',
-    title: 'Elegancia\nSin Tiempo',
-    subtitle: 'Trajes y abrigos para el hombre que marca la diferencia.',
+    image: HeroImage2,
+    tag: 'ELEGANCIA DIARIA',
+    title: 'Sofisticación\nNatural',
+    subtitle: 'Descubre piezas versátiles que combinan comodidad, estilo y calidad.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1769103638527-3240c2f5d4ad?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&w=1400&h=800&q=80',
+    image: HeroImage3,
     tag: 'TENDENCIAS',
-    title: 'Vive La\nModa Ahora',
-    subtitle: 'Las últimas tendencias en tus manos. Envío a todo el país.',
+    title: 'Inspira Tu\nPróximo Look',
+    subtitle: 'Renueva tu guardarropa con las últimas tendencias de la temporada.',
   },
 ];
 
@@ -34,7 +37,7 @@ export function HeroSlides() {
           key={i}
           className={`absolute inset-0 transition-opacity duration-1000 ${i === slide ? 'opacity-100' : 'opacity-0'}`}
         >
-          <img src={s.image} alt="" className="w-full h-full object-cover" />
+          <img src={s.image} alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
         </div>
       ))}

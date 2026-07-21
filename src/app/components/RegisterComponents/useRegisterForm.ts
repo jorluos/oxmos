@@ -47,7 +47,7 @@ export function useRegisterForm() {
       await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
 
       await axios.post(
-        '/register',
+        '/api/register',
         {
           first_name: form.nombres,
           last_name: form.apellidos,
@@ -62,13 +62,22 @@ export function useRegisterForm() {
       );
 
       const { data } = await axios.get('/api/user', { withCredentials: true });
-      setCurrentUser(data.data);
+      setCurrentUser(data.data ?? data);
       navigate('catalog');
     } catch (error: any) {
       if (error?.response?.status === 422) {
-        setGlobalError('No se pudo registrar. Verifica los datos o usa otro correo.');
+        const backendErrors = error.response.data?.errors;
+        if (backendErrors?.email) {
+          setGlobalError('El correo electrónico ya está registrado. Intenta con otro o inicia sesión.');
+        } else if (backendErrors?.document_number) {
+          setGlobalError('El número de cédula ya se encuentra registrado.');
+        } else {
+          setGlobalError('No se pudo registrar. Verifica los datos ingresados.');
+        }
+      } else if (!error?.response) {
+        setGlobalError('No se pudo conectar con el servidor backend (http://localhost:8000). Verifica que el servidor Laravel esté activo.');
       } else {
-        setGlobalError('No se pudo crear la cuenta. Inténtalo de nuevo.');
+        setGlobalError(`No se pudo crear la cuenta (Error ${error?.response?.status}). Inténtalo de nuevo.`);
       }
     }
   };

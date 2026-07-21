@@ -1,72 +1,22 @@
-﻿import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import axios from '../../axios';
 import { Field } from './Field';
+import { useRegisterForm } from './RegisterComponents/useRegisterForm';
+import { RegisterHeader } from './RegisterComponents/RegisterHeader';
+import { PasswordField } from './RegisterComponents/PasswordField';
+import { TermsDisclaimer } from './RegisterComponents/TermsDisclaimer';
+import { LoginRedirect } from './RegisterComponents/LoginRedirect';
 
 export function Register() {
-  const { setCurrentUser, navigate, darkMode } = useApp();
-  const [form, setForm] = useState({
-    nombres: '', apellidos: '', cedula: '', telefono: '',
-    correo: '', cumpleanos: '', direccion: '', password: '', confirmPassword: '',
-  });
-  const [showPw, setShowPw] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [globalError, setGlobalError] = useState('');
-
-  const update = (field: string, value: string) => {
-    setForm(f => ({ ...f, [field]: value }));
-    setErrors(prev => ({ ...prev, [field]: '' }));
-    setGlobalError('');
-  };
-
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!form.nombres.trim()) e.nombres = 'Requerido';
-    if (!form.apellidos.trim()) e.apellidos = 'Requerido';
-    if (!form.cedula.trim() || form.cedula.length < 6) e.cedula = 'Ingresa un número válido';
-    if (!form.telefono.trim() || form.telefono.length < 7) e.telefono = 'Ingresa un número válido';
-    if (!form.correo.trim() || !form.correo.includes('@')) e.correo = 'Correo inválido';
-    if (!form.cumpleanos) e.cumpleanos = 'Requerido';
-    if (!form.direccion.trim()) e.direccion = 'Requerido';
-    if (!form.password || form.password.length < 8) e.password = 'Mínimo 8 caracteres';
-    if (form.password !== form.confirmPassword) e.confirmPassword = 'Las contraseñas no coinciden';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    try {
-      await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
-
-      await axios.post(
-        '/register',
-        {
-          first_name: form.nombres,
-          last_name: form.apellidos,
-          document_number: form.cedula,
-          phone: form.telefono,
-          email: form.correo,
-          birth_date: form.cumpleanos,
-          password: form.password,
-          password_confirmation: form.confirmPassword,
-        },
-        { withCredentials: true }
-      );
-
-      const { data } = await axios.get('/api/user', { withCredentials: true });
-      setCurrentUser(data.data);
-      navigate('catalog');
-    } catch (error: any) {
-      if (error?.response?.status === 422) {
-        setGlobalError('No se pudo registrar. Verifica los datos o usa otro correo.');
-      } else {
-        setGlobalError('No se pudo crear la cuenta. Inténtalo de nuevo.');
-      }
-    }
-  };
+  const { darkMode } = useApp();
+  const {
+    form,
+    showPw,
+    errors,
+    globalError,
+    update,
+    handleSubmit,
+    toggleShowPw,
+  } = useRegisterForm();
 
   return (
     <div className={`pt-16 min-h-screen transition-colors ${darkMode ? 'bg-[#09090b] text-white' : 'bg-[#f7f5f2] text-black'}`}>
@@ -78,10 +28,7 @@ export function Register() {
         <div className={`rounded-3xl border p-8 sm:p-10 shadow-2xl backdrop-blur-sm ${
           darkMode ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-white'
         }`}>
-          <div className="text-center mb-8">
-            <h1 className={`text-3xl tracking-[0.3em] font-light mb-2 ${darkMode ? 'text-white' : 'text-black'}`}>OXMOS</h1>
-            <p className={`text-sm ${darkMode ? 'text-white/55' : 'text-black/40'}`}>Crea tu cuenta gratuita</p>
-          </div>
+          <RegisterHeader />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -95,46 +42,24 @@ export function Register() {
             <Field label="Fecha de cumpleaños" name="cumpleanos" type="date" value={form.cumpleanos} error={errors.cumpleanos} onChange={(value) => update('cumpleanos', value)} />
             <Field label="Dirección de residencia" name="direccion" placeholder="Calle, carrera, número, ciudad" value={form.direccion} error={errors.direccion} onChange={(value) => update('direccion', value)} />
 
-            <div>
-              <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/55' : 'text-black/50'}`}>Contraseña *</label>
-              <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('password', e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                  className={`w-full border px-4 py-3 text-sm outline-none pr-12 transition-colors ${
-                    darkMode
-                      ? 'border-white/10 bg-white/[0.03] text-white placeholder:text-white/30 focus:border-white/30'
-                      : 'border-black/15 bg-white text-black placeholder:text-black/35 focus:border-black'
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(v => !v)}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-white/35 hover:text-white/70' : 'text-black/30 hover:text-black/60'}`}
-                >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-            </div>
+            <PasswordField
+              label="Contraseña"
+              value={form.password}
+              error={errors.password}
+              onChange={(val) => update('password', val)}
+              placeholder="Mínimo 8 caracteres"
+              showToggle
+              showPw={showPw}
+              onToggleShowPw={toggleShowPw}
+            />
 
-            <div>
-              <label className={`block text-xs tracking-wide uppercase mb-1.5 ${darkMode ? 'text-white/55' : 'text-black/50'}`}>Confirmar contraseña *</label>
-              <input
-                type="password"
-                value={form.confirmPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => update('confirmPassword', e.target.value)}
-                placeholder="Repite tu contraseña"
-                className={`w-full border px-4 py-3 text-sm outline-none transition-colors ${
-                  darkMode
-                    ? 'border-white/10 bg-white/[0.03] text-white placeholder:text-white/30 focus:border-white/30'
-                    : 'border-black/15 bg-white text-black placeholder:text-black/35 focus:border-black'
-                }`}
-              />
-              {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
-            </div>
+            <PasswordField
+              label="Confirmar contraseña"
+              value={form.confirmPassword}
+              error={errors.confirmPassword}
+              onChange={(val) => update('confirmPassword', val)}
+              placeholder="Repite tu contraseña"
+            />
 
             {globalError && (
               <p className={`text-sm text-center border py-2 px-3 rounded-lg ${darkMode ? 'text-red-200 bg-red-500/10 border-red-400/20' : 'text-red-500 bg-red-50 border-red-200'}`}>
@@ -142,16 +67,7 @@ export function Register() {
               </p>
             )}
 
-            <p className={`text-xs leading-relaxed ${darkMode ? 'text-white/55' : 'text-black/40'}`}>
-              Al registrarte, aceptas nuestros{' '}
-              <button type="button" onClick={() => navigate('policies')} className={`underline underline-offset-2 ${darkMode ? 'text-white hover:text-white/70' : 'text-black hover:text-black/60'}`}>
-                términos y condiciones
-              </button>{' '}
-              y nuestra{' '}
-              <button type="button" onClick={() => navigate('policies')} className={`underline underline-offset-2 ${darkMode ? 'text-white hover:text-white/70' : 'text-black hover:text-black/60'}`}>
-                política de privacidad
-              </button>.
-            </p>
+            <TermsDisclaimer />
 
             <button
               type="submit"
@@ -162,12 +78,7 @@ export function Register() {
               Crear cuenta
             </button>
 
-            <div className={`text-center text-xs ${darkMode ? 'text-white/55' : 'text-black/40'}`}>
-              ¿Ya tienes una cuenta?{' '}
-              <button type="button" onClick={() => navigate('login')} className={`underline ${darkMode ? 'text-white hover:text-white/70' : 'text-black'}`}>
-                Inicia sesión
-              </button>
-            </div>
+            <LoginRedirect />
           </form>
         </div>
       </div>

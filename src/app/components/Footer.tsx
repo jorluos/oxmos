@@ -1,4 +1,4 @@
-﻿import { Instagram, Facebook } from 'lucide-react';
+import { Instagram, Facebook } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export function Footer() {
@@ -22,7 +22,7 @@ export function Footer() {
               }`}>
                 <Instagram size={16} />
               </a>
-              <a href="#" className={`w-9 h-9 border flex items-center justify-center transition-colors ${
+              <a href="https://www.facebook.com/profile.php/?id=61581950850872" className={`w-9 h-9 border flex items-center justify-center transition-colors ${
                 darkMode
                   ? 'border-black/20 hover:bg-black hover:text-white'
                   : 'border-white/20 hover:bg-white hover:text-black'

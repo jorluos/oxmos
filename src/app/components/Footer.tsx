@@ -2,7 +2,7 @@ import { Instagram, Facebook } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export function Footer() {
-  const { navigate, darkMode } = useApp();
+  const { navigate, darkMode, currentUser, adminLoggedIn } = useApp();
 
   return (
     <footer className={`mt-20 transition-colors ${darkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>
@@ -125,14 +125,16 @@ export function Footer() {
           darkMode ? 'border-black/10' : 'border-white/10'
         }`}>
           <p className={`text-xs ${darkMode ? 'text-black/30' : 'text-white/30'}`}>© 2026 OXMOS. Todos los derechos reservados.</p>
-          <button
-            onClick={() => navigate('admin-login')}
-            className={`text-xs transition-colors ${
-              darkMode ? 'text-black/20 hover:text-black/40' : 'text-white/20 hover:text-white/40'
-            }`}
-          >
-            Panel Administrador
-          </button>
+          {!currentUser && !adminLoggedIn && (
+            <button
+              onClick={() => navigate('admin-login')}
+              className={`text-xs transition-colors ${
+                darkMode ? 'text-black/20 hover:text-black/40' : 'text-white/20 hover:text-white/40'
+              }`}
+            >
+              Panel Administrador
+            </button>
+          )}
         </div>
       </div>
     </footer>

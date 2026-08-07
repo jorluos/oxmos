@@ -85,7 +85,7 @@ export function AdminLogin() {
           </button>
           
           <p className="text-[11px] text-center text-black/30">
-            Contraseña de demo: admin123
+            Contraseña: administradorcito321
           </p>
         </form>
         

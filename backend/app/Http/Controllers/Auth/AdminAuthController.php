@@ -13,28 +13,33 @@ use Illuminate\Support\Facades\Auth;
 class AdminAuthController extends Controller
 {
     /**
-     * Login de admin solo con contraseña.
+     * Login de admin con correo y contraseña.
      */
     public function login(Request $request): JsonResponse
-{
-    $request->validate(['password' => 'required|string']);
+    {
+        $request->validate([
+            'email'    => 'required|string|email',
+            'password' => 'required|string',
+        ]);
 
-    $user = User::where('role_id', 1)->first();
+        $user = User::where('email', $request->email)
+                    ->where('role_id', 1)
+                    ->first();
 
-    if (! $user || ! Hash::check($request->password, $user->password)) {
-        throw ValidationException::withMessages([
-            'password' => ['Contraseña incorrecta.'],
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Credenciales incorrectas o el usuario no es administrador.'],
+            ]);
+        }
+
+        // Iniciar sesión (Sanctum usa guard 'web' para cookies)
+        Auth::guard('web')->login($user);
+
+        return response()->json([
+            'success' => true,
+            'user'    => $user,
         ]);
     }
-
-    // Iniciar sesión (Sanctum usa guard 'web' para cookies)
-    Auth::guard('web')->login($user);
-
-    return response()->json([
-        'success' => true,
-        'user'    => $user,
-    ]);
-}
 
     /**
      * Logout (Cierra sesion con cookies).

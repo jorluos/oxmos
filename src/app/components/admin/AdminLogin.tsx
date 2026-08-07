@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 
 export function AdminLogin() {
   const { adminLogin, navigate } = useApp();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
@@ -15,11 +16,11 @@ export function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const success = await adminLogin(password);
+      const success = await adminLogin(email, password);
       if (success) {
         navigate('admin');
       } else {
-        setError('Contraseña incorrecta.');
+        setError('Credenciales incorrectas.');
       }
     } catch (err) {
       if ((err as any)?.response?.status === 429) {
@@ -44,6 +45,24 @@ export function AdminLogin() {
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setEmail(e.target.value);
+                setError('');
+              }}
+              placeholder="admin@oxmos.com"
+              required
+              disabled={isLoading}
+              className="w-full border border-black/20 focus:border-black px-4 py-3 text-sm outline-none disabled:opacity-50"
+            />
+          </div>
+
           <div>
             <label className="block text-xs tracking-wide uppercase text-black/50 mb-1.5">
               Contraseña
@@ -84,7 +103,8 @@ export function AdminLogin() {
             {isLoading ? 'Ingresando...' : 'Ingresar'}
           </button>
           
-          <p className="text-[11px] text-center text-black/30">
+          <p className="text-[11px] text-center text-black/30 leading-relaxed">
+            Usuario: admin@oxmos.com<br />
             Contraseña: administradorcito321
           </p>
         </form>

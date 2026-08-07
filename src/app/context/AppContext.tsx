@@ -32,7 +32,7 @@ interface AppContextType extends AppState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (data: RegisterPayload) => Promise<boolean>;
-  adminLogin: (password: string) => Promise<boolean>;
+  adminLogin: (email: string, password: string) => Promise<boolean>;
   adminLogout: () => Promise<void>;
   addProduct: (product: any) => Promise<void>;
   updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
@@ -338,10 +338,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ==========================================================
   // ADMIN AUTH (API real)
   // ==========================================================
-  const adminLogin = useCallback(async (password: string): Promise<boolean> => {
+  const adminLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       await axios.get('/sanctum/csrf-cookie');
-      const { data } = await axios.post('/api/admin/login', { password });
+      const { data } = await axios.post('/api/admin/login', { email, password });
       if (data.success) {
         setState(s => ({
           ...s,

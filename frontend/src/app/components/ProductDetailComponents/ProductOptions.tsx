@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { formatPrice } from '../../data';
 import type { Product } from '../../types';
@@ -18,7 +18,7 @@ interface ProductOptionsProps {
   isWishlisted: boolean;
   displayPrice: number;
   displayOriginalPrice?: number;
-  discount: number;
+  discount: number | null;
   stockForSize: number | null;
   darkMode: boolean;
   onSelectColor: (hex: string) => void;

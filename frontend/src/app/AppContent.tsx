@@ -16,7 +16,7 @@ import { WhatsAppButton } from './components/WhatsAppButton';
 import { Wishlist } from './components/Wishlist';
 
 export function AppContent() {
-  const { currentPage, adminLoggedIn } = useApp();
+  const { currentPage, adminLoggedIn, darkMode } = useApp();
 
   if (currentPage === 'admin-login') return <AdminLogin />;
   if (currentPage === 'admin') {
@@ -35,10 +35,10 @@ export function AppContent() {
   }
 
   return (
-    <>
+    <div className={`min-h-screen flex flex-col transition-colors ${darkMode ? 'bg-black text-white' : 'bg-white text-black'}`}>
       <Header />
       <Cart />
-      <main>
+      <main className="flex-1">
         {currentPage === 'landing' && <LandingPage />}
         {currentPage === 'catalog-gender' && <CatalogGenderSelection />}
         {currentPage === 'catalog' && <Catalog />}
@@ -50,6 +50,6 @@ export function AppContent() {
       </main>
       <Footer />
       <WhatsAppButton />
-    </>
+    </div>
   );
 }

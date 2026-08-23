@@ -166,6 +166,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Sincronizar clase 'dark' y fondo con el HTML/Body
+  useEffect(() => {
+    if (state.darkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.style.backgroundColor = '#000000';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.style.backgroundColor = '#ffffff';
+    }
+  }, [state.darkMode]);
+
   // ==========================================================
   // EFECTO INICIAL: Cargar productos públicos + sesión
   // ==========================================================

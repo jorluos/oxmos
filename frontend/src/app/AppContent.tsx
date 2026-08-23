@@ -1,36 +1,38 @@
-import { useApp } from './context/AppContext';
-import { AdminLogin } from './components/admin/AdminLogin';
-import { AdminPanel } from './components/AdminPanel';
-import { Cart } from './components/Cart';
-import { Catalog } from './components/Catalog';
-import { CatalogGenderSelection } from './components/CatalogGenderSelection';
-import { Checkout } from './components/Checkout';
-import { Footer } from './components/Footer';
-import { Header } from './components/Header';
-import { LandingPage } from './components/LandingPage';
-import { Login } from './components/Login';
-import { Policies } from './components/Policies';
-import { ProductDetail } from './components/ProductDetail';
-import { Register } from './components/Register';
-import { WhatsAppButton } from './components/WhatsAppButton';
-import { Wishlist } from './components/Wishlist';
+﻿import { useApp } from './context/AppContext';
+import { AdminLogin } from './components/features/admin/AdminLogin';
+import { AdminPage } from './pages/AdminPage';
+import { Cart } from './components/layout/Cart/Cart';
+import { CatalogPage } from './pages/CatalogPage';
+import { CatalogGenderPage } from './pages/CatalogGenderPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { Footer } from './components/layout/Footer/Footer';
+import { Header } from './components/layout/Header/Header';
+import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
+import { PoliciesPage } from './pages/PoliciesPage';
+import { ProductDetailPage } from './pages/ProductDetailPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { WhatsAppButton } from './components/layout/WhatsAppButton/WhatsAppButton';
+import { WishlistPage } from './pages/WishlistPage';
 
 export function AppContent() {
   const { currentPage, adminLoggedIn, darkMode } = useApp();
 
   if (currentPage === 'admin-login') return <AdminLogin />;
   if (currentPage === 'admin') {
-    return adminLoggedIn ? <AdminPanel /> : <AdminLogin />;
+    return adminLoggedIn ? <AdminPage /> : <AdminLogin />;
   }
 
   if (currentPage === 'checkout') {
     return (
-      <>
+      <div className={`min-h-screen flex flex-col transition-colors ${darkMode ? 'bg-black text-white' : 'bg-white text-black'}`}>
         <Header />
         <Cart />
-        <Checkout />
+        <main className="flex-1">
+          <CheckoutPage />
+        </main>
         <WhatsAppButton />
-      </>
+      </div>
     );
   }
 
@@ -40,13 +42,13 @@ export function AppContent() {
       <Cart />
       <main className="flex-1">
         {currentPage === 'landing' && <LandingPage />}
-        {currentPage === 'catalog-gender' && <CatalogGenderSelection />}
-        {currentPage === 'catalog' && <Catalog />}
-        {currentPage === 'product' && <ProductDetail />}
-        {currentPage === 'wishlist' && <Wishlist />}
-        {currentPage === 'policies' && <Policies />}
-        {currentPage === 'login' && <Login />}
-        {currentPage === 'register' && <Register />}
+        {currentPage === 'catalog-gender' && <CatalogGenderPage />}
+        {currentPage === 'catalog' && <CatalogPage />}
+        {currentPage === 'product' && <ProductDetailPage />}
+        {currentPage === 'wishlist' && <WishlistPage />}
+        {currentPage === 'policies' && <PoliciesPage />}
+        {currentPage === 'login' && <LoginPage />}
+        {currentPage === 'register' && <RegisterPage />}
       </main>
       <Footer />
       <WhatsAppButton />

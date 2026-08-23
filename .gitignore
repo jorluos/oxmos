@@ -1,8 +1,10 @@
-# Dependencias
+﻿# Dependencias
 node_modules/
+frontend/node_modules/
 
 # Build generado
 dist/
+frontend/dist/
 
 # Entornos locales
 .venv/
@@ -23,3 +25,4 @@ pnpm-debug.log*
 
 # Cache
 .vite/
+frontend/.vite/

@@ -1,7 +1,7 @@
 import { useApp } from './context/AppContext';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminPanel } from './components/AdminPanel';
-import { Cart } from './components/LandingPageComponents/Cart';
+import { Cart } from './components/Cart';
 import { Catalog } from './components/Catalog';
 import { CatalogGenderSelection } from './components/CatalogGenderSelection';
 import { Checkout } from './components/Checkout';

@@ -6,7 +6,7 @@ import { LoginHeader } from '../components/features/auth/LoginHeader';
 import { RegisterRedirect } from '../components/features/auth/RegisterRedirect';
 
 export function LoginPage() {
-  const { darkMode } = useApp();
+  const { darkMode, navigate } = useApp();
   const {
     email,
     password,
@@ -77,6 +77,13 @@ export function LoginPage() {
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate('forgot-password')}
+                className={`mt-2 text-xs ${darkMode ? 'text-white/50 hover:text-white' : 'text-black/50 hover:text-black'}`}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
             </div>
 
             {error && (

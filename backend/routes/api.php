@@ -6,6 +6,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfileController;
 
 // Rutas públicas (sin autenticación)
 Route::get('/products', [ProductController::class, 'listForCatalog']);
@@ -15,6 +16,10 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    // PERFIL DEL USUARIO
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 
     // CARRITO
     Route::get('/cart', [CartController::class, 'index']);

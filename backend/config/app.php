@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL (SPA)
+    |--------------------------------------------------------------------------
+    |
+    | Usada para construir enlaces que apuntan al frontend (por ejemplo, el
+    | enlace de restablecimiento de contraseña que se envía por correo).
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

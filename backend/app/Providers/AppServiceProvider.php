@@ -21,7 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
-            return config('app.frontend_url')."/password-reset/$token?email={$notifiable->getEmailForPasswordReset()}";
+            $frontend = rtrim(config('app.frontend_url'), '/');
+            $email = urlencode($notifiable->getEmailForPasswordReset());
+
+            // El frontend (SPA) lee "token" y "email" desde el query string
+            // en la ruta /reset-password (ver ResetPasswordPage.tsx).
+            return "{$frontend}/reset-password?token={$token}&email={$email}";
         });
     }
 }

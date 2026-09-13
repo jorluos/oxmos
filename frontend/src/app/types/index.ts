@@ -8,7 +8,8 @@ export type PaymentStatus = 'pendiente' | 'pagado' | 'reembolsado' | 'fallido';
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'transferencia' | 'otros';
 export type Page =
   | 'landing' | 'catalog-gender' | 'catalog' | 'product' | 'checkout' | 'wishlist'
-  | 'policies' | 'login' | 'register' | 'admin' | 'admin-login';
+  | 'policies' | 'login' | 'register' | 'admin' | 'admin-login'
+  | 'profile' | 'forgot-password' | 'reset-password';
 
 // ============================================================
 // MODELOS PRINCIPALES (coherentes con backend Laravel)

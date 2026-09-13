@@ -32,6 +32,9 @@ interface AppContextType extends AppState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (data: RegisterPayload) => Promise<boolean>;
+  updateProfile: (updates: { first_name?: string; last_name?: string; phone?: string; address?: string }) => Promise<{ ok: boolean; message?: string }>;
+  requestPasswordReset: (email: string) => Promise<{ ok: boolean; message: string }>;
+  resetPassword: (payload: { token: string; email: string; password: string; password_confirmation: string }) => Promise<{ ok: boolean; message: string }>;
   adminLogin: (email: string, password: string) => Promise<boolean>;
   adminLogout: () => Promise<void>;
   addProduct: (product: any) => Promise<void>;
@@ -88,6 +91,15 @@ const toUser = (data: any): User => ({
 // ============================================================
 const AppContext = createContext<AppContextType | null>(null);
 
+// Extrae el primer mensaje de error de validación de una respuesta 422 de Laravel
+// (formato: { errors: { campo: ['mensaje1', ...] } }).
+function firstValidationError(err: any): string | undefined {
+  const errors = err?.response?.data?.errors as Record<string, string[]> | undefined;
+  if (!errors) return undefined;
+  const firstKey = Object.keys(errors)[0];
+  return firstKey ? errors[firstKey]?.[0] : undefined;
+}
+
 const PATH_TO_PAGE: Record<string, Page> = {
   '/': 'landing',
   '/catalog': 'catalog',
@@ -97,7 +109,13 @@ const PATH_TO_PAGE: Record<string, Page> = {
   '/register': 'register',
   '/wishlist': 'wishlist',
   '/checkout': 'checkout',
-  '/admin': 'admin-login',
+  '/perfil': 'profile',
+  '/profile': 'profile',
+  '/forgot-password': 'forgot-password',
+  '/reset-password': 'reset-password',
+  // Un solo enlace directo de administrador: oxmos.com/admin
+  // (Muestra el login o el panel según si ya hay sesión de admin activa)
+  '/admin': 'admin',
   '/admin/panel': 'admin',
 };
 
@@ -110,8 +128,11 @@ const PAGE_TO_PATH: Partial<Record<Page, string>> = {
   register: '/register',
   wishlist: '/wishlist',
   checkout: '/checkout',
+  profile: '/perfil',
+  'forgot-password': '/forgot-password',
+  'reset-password': '/reset-password',
   'admin-login': '/admin',
-  admin: '/admin/panel',
+  admin: '/admin',
 };
 
 const getPageFromPath = (pathname: string): Page => PATH_TO_PAGE[pathname] ?? 'landing';
@@ -178,7 +199,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [state.darkMode]);
 
   // ==========================================================
-  // EFECTO INICIAL: Cargar productos públicos + sesión
+  // EFECTO INICIAL: Cargar productos públicos + sesión (usuario y admin)
   // ==========================================================
   useEffect(() => {
     let active = true;
@@ -200,17 +221,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    // Recuperar sesión de administrador activa (si existe una cookie válida).
+    // Esto es lo que permite entrar a /admin directamente (o volver a él)
+    // sin tener que iniciar sesión de nuevo mientras la sesión siga vigente.
+    const fetchAdminSession = async () => {
+      try {
+        const { data } = await axios.get('/api/admin/me');
+        if (active && data?.success) {
+          setState(s => ({ ...s, adminLoggedIn: true }));
+        }
+      } catch {
+        if (active) setState(s => ({ ...s, adminLoggedIn: false }));
+      }
+    };
+
     fetchSession();
+    fetchAdminSession();
 
     return () => { active = false; };
   }, [fetchCart, fetchWishlist, fetchProducts]);
 
   // ==========================================================
-  // NAVEGACIÓN
+  // NAVEGACIÓN (sincronizada con la URL del navegador)
   // ==========================================================
   const navigate = useCallback((page: Page, productId?: string) => {
     setState(s => ({ ...s, currentPage: page, currentProductId: productId ?? null, isCartOpen: false }));
+
+    const path = PAGE_TO_PATH[page];
+    if (path && window.location.pathname !== path) {
+      window.history.pushState({ page }, '', path);
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Soporta los botones "atrás"/"adelante" del navegador y que la URL
+  // (p. ej. oxmos.com/admin) siempre refleje una página válida.
+  useEffect(() => {
+    const onPopState = () => {
+      setState(s => ({ ...s, currentPage: getPageFromPath(window.location.pathname) }));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   // ==========================================================
@@ -345,6 +397,55 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
   }, [fetchCart, fetchWishlist]);
+
+  // ==========================================================
+  // PERFIL DE USUARIO
+  // ==========================================================
+  const updateProfile = useCallback(async (updates: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    address?: string;
+  }): Promise<{ ok: boolean; message?: string }> => {
+    try {
+      const { data } = await axios.put('/api/profile', updates);
+      setState(s => ({ ...s, currentUser: toUser(data.data) }));
+      return { ok: true };
+    } catch (err: any) {
+      const message = err.response?.data?.message ?? firstValidationError(err) ?? 'No se pudo actualizar el perfil.';
+      return { ok: false, message };
+    }
+  }, []);
+
+  // ==========================================================
+  // RECUPERAR CONTRASEÑA (Laravel Password Broker vía email)
+  // ==========================================================
+  const requestPasswordReset = useCallback(async (email: string): Promise<{ ok: boolean; message: string }> => {
+    try {
+      await axios.get('/sanctum/csrf-cookie');
+      const { data } = await axios.post('/api/forgot-password', { email });
+      return { ok: true, message: data.status ?? 'Si el correo existe, se envió un enlace de recuperación.' };
+    } catch (err: any) {
+      const message = firstValidationError(err) ?? 'No se pudo enviar el enlace de recuperación.';
+      return { ok: false, message };
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (payload: {
+    token: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+  }): Promise<{ ok: boolean; message: string }> => {
+    try {
+      await axios.get('/sanctum/csrf-cookie');
+      const { data } = await axios.post('/api/reset-password', payload);
+      return { ok: true, message: data.status ?? 'Contraseña actualizada correctamente.' };
+    } catch (err: any) {
+      const message = firstValidationError(err) ?? 'El enlace no es válido o ya expiró.';
+      return { ok: false, message };
+    }
+  }, []);
 
   // ==========================================================
   // ADMIN AUTH (API real)
@@ -497,6 +598,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         register,
+        updateProfile,
+        requestPasswordReset,
+        resetPassword,
         adminLogin,
         adminLogout,
         addProduct,
@@ -521,5 +625,4 @@ export function useApp() {
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 }
-
 

@@ -6,6 +6,7 @@ interface HeaderUserMenuProps {
   darkMode: boolean;
   isOpen: boolean;
   onToggle: () => void;
+  onProfile: () => void;
   onLogout: () => void;
 }
 
@@ -13,6 +14,7 @@ export function HeaderUserMenu({
   currentUser,
   darkMode,
   isOpen,
+  onProfile,
   onLogout,
 }: HeaderUserMenuProps) {
   if (!isOpen) return null;
@@ -29,6 +31,14 @@ export function HeaderUserMenu({
           {currentUser.first_name} {currentUser.last_name}
         </p>
       </div>
+      <button
+        onClick={onProfile}
+        className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+          darkMode ? 'hover:bg-white/5 text-white' : 'hover:bg-black/5 text-black'
+        }`}
+      >
+        Mi perfil
+      </button>
       <button
         onClick={onLogout}
         className={`w-full text-left px-3 py-2 text-sm transition-colors ${

@@ -11,6 +11,9 @@ import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { PoliciesPage } from './pages/PoliciesPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { WhatsAppButton } from './components/layout/WhatsAppButton/WhatsAppButton';
 import { WishlistPage } from './pages/WishlistPage';
@@ -18,8 +21,11 @@ import { WishlistPage } from './pages/WishlistPage';
 export function AppContent() {
   const { currentPage, adminLoggedIn, darkMode } = useApp();
 
-  if (currentPage === 'admin-login') return <AdminLogin />;
-  if (currentPage === 'admin') {
+  // Un solo punto de entrada al panel: oxmos.com/admin.
+  // Si ya hay una sesión de admin activa (currentPage === 'admin' venga de
+  // donde venga: login inicial, recarga de página o "Ver tienda" -> volver),
+  // se muestra el panel directamente en vez de pedir credenciales otra vez.
+  if (currentPage === 'admin-login' || currentPage === 'admin') {
     return adminLoggedIn ? <AdminPage /> : <AdminLogin />;
   }
 
@@ -49,6 +55,9 @@ export function AppContent() {
         {currentPage === 'policies' && <PoliciesPage />}
         {currentPage === 'login' && <LoginPage />}
         {currentPage === 'register' && <RegisterPage />}
+        {currentPage === 'profile' && <ProfilePage />}
+        {currentPage === 'forgot-password' && <ForgotPasswordPage />}
+        {currentPage === 'reset-password' && <ResetPasswordPage />}
       </main>
       <Footer />
       <WhatsAppButton />

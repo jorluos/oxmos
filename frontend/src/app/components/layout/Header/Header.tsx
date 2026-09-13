@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { ShoppingBag, Heart, User as UserIcon, Menu, X, Search, ChevronDown, Moon, Sun } from 'lucide-react';
+import { ShoppingBag, Heart, User as UserIcon, Menu, X, Search, ChevronDown, Moon, Sun, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../../context/AppContext';
 import { HeaderSearchBar } from './HeaderSearchBar';
 import { HeaderMobileNav } from './HeaderMobileNav';
@@ -17,6 +17,7 @@ export function Header() {
     darkMode,
     toggleDarkMode,
     setCartOpen,
+    adminLoggedIn,
   } = useApp();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -83,6 +84,20 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            {adminLoggedIn && (
+              <button
+                onClick={() => navigate('admin')}
+                title="Volver al panel de administrador"
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs tracking-wide border transition-colors ${
+                  darkMode
+                    ? 'border-white/20 text-white/70 hover:text-white hover:border-white'
+                    : 'border-black/20 text-black/70 hover:text-black hover:border-black'
+                }`}
+              >
+                <ShieldCheck size={14} /> Panel admin
+              </button>
+            )}
+
             <button
               onClick={toggleDarkMode}
               className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}
@@ -145,6 +160,10 @@ export function Header() {
                   darkMode={darkMode}
                   isOpen={userMenuOpen}
                   onToggle={() => setUserMenuOpen(!userMenuOpen)}
+                  onProfile={() => {
+                    navigate('profile');
+                    setUserMenuOpen(false);
+                  }}
                   onLogout={() => {
                     handleLogout();
                     setUserMenuOpen(false);

@@ -2,7 +2,7 @@
 import { useApp } from '../../../context/AppContext';
 
 export function Footer() {
-  const { navigate, darkMode, currentUser, adminLoggedIn } = useApp();
+  const { navigate, darkMode } = useApp();
 
   return (
     <footer className={`mt-20 border-t transition-colors ${darkMode ? 'bg-black text-white border-white/10' : 'bg-white text-black border-black/10'}`}>
@@ -125,16 +125,8 @@ export function Footer() {
           darkMode ? 'border-white/10' : 'border-black/10'
         }`}>
           <p className={`text-xs ${darkMode ? 'text-white/30' : 'text-black/30'}`}>© 2026 OXMOS. Todos los derechos reservados.</p>
-          {!currentUser && !adminLoggedIn && (
-            <button
-              onClick={() => navigate('admin-login')}
-              className={`text-xs transition-colors ${
-                darkMode ? 'text-white/20 hover:text-white/40' : 'text-black/20 hover:text-black/40'
-              }`}
-            >
-              Panel Administrador
-            </button>
-          )}
+          {/* El acceso al panel de administrador ya no se hace desde aquí:
+              ahora se entra directamente por la URL oxmos.com/admin */}
         </div>
       </div>
     </footer>

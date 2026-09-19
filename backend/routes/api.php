@@ -12,7 +12,7 @@ use App\Http\Controllers\ProfileController;
 Route::get('/products', [ProductController::class, 'listForCatalog']);
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+    return $request->user()->load('role');
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -36,14 +36,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ÓRDENES (usuario)
     Route::post('/orders', [OrderController::class, 'store']);
 
-    // ADMIN productos
-    Route::get('/admin/products', [ProductController::class, 'index']);
-    Route::get('/admin/products/{product}', [ProductController::class, 'show']);
-    Route::post('/admin/products', [ProductController::class, 'store']);
-    Route::put('/admin/products/{product}', [ProductController::class, 'update']);
-    Route::delete('/admin/products/{product}', [ProductController::class, 'destroy']);
+    // ADMIN productos y órdenes
+    Route::middleware(['admin'])->group(function () {
+        Route::get('/admin/products', [ProductController::class, 'index']);
+        Route::get('/admin/products/{product}', [ProductController::class, 'show']);
+        Route::post('/admin/products', [ProductController::class, 'store']);
+        Route::put('/admin/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/admin/products/{product}', [ProductController::class, 'destroy']);
 
-    // ADMIN órdenes
-    Route::put('/admin/orders/{order}/status', [OrderController::class, 'updateStatus']);
-    Route::delete('/admin/orders/{order}', [OrderController::class, 'destroy']);
+        Route::put('/admin/orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::delete('/admin/orders/{order}', [OrderController::class, 'destroy']);
+    });
 });

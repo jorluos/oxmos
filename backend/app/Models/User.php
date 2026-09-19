@@ -35,6 +35,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'role_id' => 'integer',
             'birth_date' => 'date',
             'email_verified_at' => 'datetime',
             'is_active' => 'boolean',

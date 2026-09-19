@@ -1,5 +1,5 @@
-﻿import { useApp } from './context/AppContext';
-import { AdminLogin } from './components/features/admin/AdminLogin';
+import { useEffect } from 'react';
+import { useApp } from './context/AppContext';
 import { AdminPage } from './pages/AdminPage';
 import { Cart } from './components/layout/Cart/Cart';
 import { CatalogPage } from './pages/CatalogPage';
@@ -19,14 +19,26 @@ import { WhatsAppButton } from './components/layout/WhatsAppButton/WhatsAppButto
 import { WishlistPage } from './pages/WishlistPage';
 
 export function AppContent() {
-  const { currentPage, adminLoggedIn, darkMode } = useApp();
+  const { currentPage, adminLoggedIn, authLoading, navigate, setLoginNotice, darkMode } = useApp();
 
-  // Un solo punto de entrada al panel: oxmos.com/admin.
-  // Si ya hay una sesión de admin activa (currentPage === 'admin' venga de
-  // donde venga: login inicial, recarga de página o "Ver tienda" -> volver),
-  // se muestra el panel directamente en vez de pedir credenciales otra vez.
-  if (currentPage === 'admin-login' || currentPage === 'admin') {
-    return adminLoggedIn ? <AdminPage /> : <AdminLogin />;
+  // Control de acceso a la ruta admin:
+  // Si se intenta acceder a /admin sin sesión de admin, redirigir al login general con aviso
+  useEffect(() => {
+    if (!authLoading && (currentPage === 'admin' || currentPage === 'admin-login') && !adminLoggedIn) {
+      setLoginNotice('Se requieren permisos de administrador para acceder a esa sección.');
+      navigate('login');
+    }
+  }, [currentPage, adminLoggedIn, authLoading, navigate, setLoginNotice]);
+
+  if (currentPage === 'admin' || currentPage === 'admin-login') {
+    if (authLoading) {
+      return (
+        <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-black text-white' : 'bg-white text-black'}`}>
+          <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin border-current" />
+        </div>
+      );
+    }
+    return adminLoggedIn ? <AdminPage /> : null;
   }
 
   if (currentPage === 'checkout') {

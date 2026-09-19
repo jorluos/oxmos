@@ -18,18 +18,17 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        // Verificar si el usuario está autenticado
-        if (!Auth::check()) {
+        $user = $request->user() ?? Auth::user();
+
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'No autenticado. Por favor, inicia sesión.'
             ], 401);
         }
 
-        $user = Auth::user();
-
         // El rol de administrador se identifica con role_id = 1
-        if ($user->role_id !== 1) {
+        if ((int)$user->role_id !== 1) {
             return response()->json([
                 'success' => false,
                 'message' => 'Acceso denegado. Se requieren permisos de administrador.'

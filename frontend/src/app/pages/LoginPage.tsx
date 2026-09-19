@@ -1,12 +1,12 @@
-﻿import React from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import React from 'react';
+import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useLoginForm } from '../components/features/auth/useLoginForm';
 import { LoginHeader } from '../components/features/auth/LoginHeader';
 import { RegisterRedirect } from '../components/features/auth/RegisterRedirect';
 
 export function LoginPage() {
-  const { darkMode, navigate } = useApp();
+  const { darkMode, navigate, loginNotice } = useApp();
   const {
     email,
     password,
@@ -30,6 +30,19 @@ export function LoginPage() {
           darkMode ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-white'
         }`}>
           <LoginHeader />
+
+          {loginNotice && (
+            <div
+              className={`mb-5 p-3.5 rounded-2xl border flex items-start gap-2.5 text-xs leading-relaxed transition-colors ${
+                darkMode
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
+              }`}
+            >
+              <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+              <span>{loginNotice}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

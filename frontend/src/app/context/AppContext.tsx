@@ -16,11 +16,14 @@ interface AppState {
   products: Product[];                        // Se llenan desde API
   orders: Order[];                            // Se llenan desde API
   adminLoggedIn: boolean;
+  authLoading: boolean;
+  loginNotice: string | null;
   darkMode: boolean;
 }
 
 interface AppContextType extends AppState {
   navigate: (page: Page, productId?: string) => void;
+  setLoginNotice: (notice: string | null) => void;
   selectCatalogGender: (gender: Gender) => void;
   addToCart: (productId: number, variantId: number, quantity: number) => Promise<void>;
   removeFromCart: (itemId: number) => Promise<void>;
@@ -81,10 +84,21 @@ const toUser = (data: any): User => ({
   document_number: data.document_number ?? '',
   birth_date: data.birth_date ?? '',
   is_active: data.is_active ?? true,
-  role_id: data.role_id ?? undefined,
+  role_id: data.role_id !== undefined && data.role_id !== null ? Number(data.role_id) : undefined,
   role: data.role ?? undefined,
   addresses: data.addresses ?? [],
 });
+
+/** Determina si un usuario tiene permisos de administrador */
+export const isUserAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  return (
+    user.role_id === 1 ||
+    user.role?.id === 1 ||
+    user.role?.name?.toLowerCase() === 'administrador' ||
+    (user as any).role?.slug === 'admin'
+  );
+};
 
 // ============================================================
 // CONTEXTO
@@ -113,8 +127,6 @@ const PATH_TO_PAGE: Record<string, Page> = {
   '/profile': 'profile',
   '/forgot-password': 'forgot-password',
   '/reset-password': 'reset-password',
-  // Un solo enlace directo de administrador: oxmos.com/admin
-  // (Muestra el login o el panel según si ya hay sesión de admin activa)
   '/admin': 'admin',
   '/admin/panel': 'admin',
 };
@@ -131,7 +143,7 @@ const PAGE_TO_PATH: Partial<Record<Page, string>> = {
   profile: '/perfil',
   'forgot-password': '/forgot-password',
   'reset-password': '/reset-password',
-  'admin-login': '/admin',
+  'admin-login': '/login',
   admin: '/admin',
 };
 
@@ -149,6 +161,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     products: [],
     orders: [],
     adminLoggedIn: false,
+    authLoading: true,
+    loginNotice: null,
     darkMode: false,
   }));
 
@@ -207,36 +221,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Cargar productos públicos (siempre, sin importar auth)
     fetchProducts();
 
-    // Recuperar sesión actual + carrito + wishlist (solo si autenticado)
+    // Recuperar sesión actual (usuario y rol) + carrito + wishlist
     const fetchSession = async () => {
       try {
         const { data } = await axios.get('/api/user');
         if (active && data) {
-          setState(s => ({ ...s, currentUser: toUser(data) }));
+          const user = toUser(data);
+          const isAdmin = isUserAdmin(user);
+          setState(s => ({
+            ...s,
+            currentUser: user,
+            adminLoggedIn: isAdmin,
+            authLoading: false,
+          }));
           fetchCart();
           fetchWishlist();
         }
       } catch {
-        if (active) setState(s => ({ ...s, currentUser: null }));
-      }
-    };
-
-    // Recuperar sesión de administrador activa (si existe una cookie válida).
-    // Esto es lo que permite entrar a /admin directamente (o volver a él)
-    // sin tener que iniciar sesión de nuevo mientras la sesión siga vigente.
-    const fetchAdminSession = async () => {
-      try {
-        const { data } = await axios.get('/api/admin/me');
-        if (active && data?.success) {
-          setState(s => ({ ...s, adminLoggedIn: true }));
+        if (active) {
+          setState(s => ({
+            ...s,
+            currentUser: null,
+            adminLoggedIn: false,
+            authLoading: false,
+          }));
         }
-      } catch {
-        if (active) setState(s => ({ ...s, adminLoggedIn: false }));
       }
     };
 
     fetchSession();
-    fetchAdminSession();
 
     return () => { active = false; };
   }, [fetchCart, fetchWishlist, fetchProducts]);
@@ -362,12 +375,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, currentUser: user }));
   }, []);
 
+  const setLoginNotice = useCallback((notice: string | null) => {
+    setState(s => ({ ...s, loginNotice: notice }));
+  }, []);
+
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       await axios.get('/sanctum/csrf-cookie');
       await axios.post('/api/login', { email, password });
       const { data } = await axios.get('/api/user');
-      setState(s => ({ ...s, currentUser: toUser(data) }));
+      const user = toUser(data);
+      const isAdmin = isUserAdmin(user);
+      setState(s => ({
+        ...s,
+        currentUser: user,
+        adminLoggedIn: isAdmin,
+        loginNotice: null,
+      }));
       fetchCart();
       fetchWishlist();
       return true;
@@ -380,7 +404,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await axios.post('/api/logout');
     } finally {
-      setState(s => ({ ...s, currentUser: null, cart: [], wishlist: [], adminLoggedIn: false }));
+      setState(s => ({ ...s, currentUser: null, cart: [], wishlist: [], adminLoggedIn: false, loginNotice: null }));
     }
   }, []);
 
@@ -448,33 +472,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ==========================================================
-  // ADMIN AUTH (API real)
+  // ADMIN AUTH
   // ==========================================================
   const adminLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
-    try {
-      await axios.get('/sanctum/csrf-cookie');
-      const { data } = await axios.post('/api/admin/login', { email, password });
-      if (data.success) {
-        setState(s => ({
-          ...s,
-          adminLoggedIn: true,
-          currentUser: toUser(data.user),
-        }));
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  }, []);
+    return login(email, password);
+  }, [login]);
 
   const adminLogout = useCallback(async () => {
     try {
-      await axios.post('/api/admin/logout');
+      await axios.post('/api/logout');
+    } catch {
+      try {
+        await axios.post('/api/admin/logout');
+      } catch {
+        // fallback
+      }
     } finally {
-      setState(s => ({ ...s, adminLoggedIn: false, currentUser: null }));
+      setState(s => ({ ...s, adminLoggedIn: false, currentUser: null, loginNotice: null }));
     }
-  }, []);
+  }, [login]);
 
   // ==========================================================
   // PRODUCTOS (Admin API)
@@ -587,6 +603,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         navigate,
+        setLoginNotice,
         selectCatalogGender,
         addToCart,
         removeFromCart,

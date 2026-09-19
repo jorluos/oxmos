@@ -1,8 +1,8 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 
 export function useLoginForm() {
-  const { login, navigate } = useApp();
+  const { login, navigate, loginNotice, setLoginNotice } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -33,11 +33,13 @@ export function useLoginForm() {
   const handleEmailChange = (val: string) => {
     setEmail(val);
     if (error) setError('');
+    if (loginNotice) setLoginNotice(null);
   };
 
   const handlePasswordChange = (val: string) => {
     setPassword(val);
     if (error) setError('');
+    if (loginNotice) setLoginNotice(null);
   };
 
   return {

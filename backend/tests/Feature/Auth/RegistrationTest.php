@@ -11,7 +11,7 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
-        $response = $this->post('/register', [
+        $response = $this->post('/api/register', [
             'first_name' => 'Test',
             'last_name' => 'User',
             'document_number' => '1234567890',

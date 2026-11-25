@@ -21,6 +21,8 @@ return [
 
     'allowed_origins' => array_values(array_filter([
         env('FRONTEND_URL'),
+        'https://oxmosstore.com',
+        'https://www.oxmosstore.com',
         'http://localhost:5173',
         'http://127.0.0.1:5173',
     ])),

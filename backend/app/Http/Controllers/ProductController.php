@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Services\ProductService;
 use App\Http\Requests\Products\ProductStoreRequest;
 use App\Http\Requests\Products\ProductUpdateRequest;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -230,6 +231,58 @@ class ProductController extends Controller
                 'success' => false,
                 'message' => 'Error al eliminar el producto',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Subir imagen para productos desde el dispositivo
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,svg|max:10240',
+        ]);
+
+        try {
+            $file = $request->file('image');
+            $extension = $file->getClientOriginalExtension() ?: 'jpg';
+            $fileName = time() . '_' . Str::random(10) . '.' . $extension;
+
+            // Carpeta destino en public_html (Hostinger) o en public local
+            $publicHtmlDir = base_path('../public_html/storage/products');
+            $localPublicDir = public_path('storage/products');
+
+            $targetDir = is_dir(base_path('../public_html')) ? $publicHtmlDir : $localPublicDir;
+
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+
+            $file->move($targetDir, $fileName);
+
+            // Si existe public local además de public_html, mantenemos sincronía
+            if ($targetDir !== $localPublicDir && file_exists(dirname($localPublicDir))) {
+                @mkdir($localPublicDir, 0755, true);
+                @copy($targetDir . '/' . $fileName, $localPublicDir . '/' . $fileName);
+            }
+
+            // Construir la URL pública accesible
+            $url = url('/storage/products/' . $fileName);
+            if ($request->secure() || str_starts_with(config('app.url', ''), 'https://')) {
+                $url = preg_replace('/^http:/i', 'https:', $url);
+            }
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'filename' => $fileName,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al subir la imagen: ' . $e->getMessage()
             ], 500);
         }
     }
